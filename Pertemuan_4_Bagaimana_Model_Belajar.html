@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pertemuan 4 — Bagaimana Model Belajar?</title>
+<style>
+:root{
+  --bg:#0b1120; --panel:#111827; --panel2:#172033; --line:#2b3952;
+  --text:#e5e7eb; --muted:#9ca3af; --accent:#38bdf8; --green:#34d399;
+  --yellow:#fbbf24; --red:#fb7185;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+header{padding:42px 7%;background:linear-gradient(135deg,#0f172a,#13243a);border-bottom:1px solid var(--line)}
+.badge{display:inline-block;padding:5px 10px;border:1px solid #35516d;border-radius:20px;color:var(--accent);font-size:13px}
+h1{font-size:clamp(30px,5vw,52px);line-height:1.1;margin:15px 0 10px}
+h2{margin-top:0;color:var(--accent)}
+h3{color:#dbeafe}
+.container{max-width:1150px;margin:auto;padding:28px 7%}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;margin:20px 0;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:20px 0}
+.step{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
+.num{font-size:26px;color:var(--accent);font-weight:800}
+.formula{font-family:Consolas,monospace;background:#07101d;border:1px solid #24364d;border-radius:10px;padding:15px;color:#d1fae5;overflow:auto}
+.highlight{border-left:4px solid var(--yellow);padding:12px 16px;background:#17171a}
+.good{border-left:4px solid var(--green);padding:12px 16px;background:#0d1b18}
+.warn{border-left:4px solid var(--red);padding:12px 16px;background:#21131a}
+label{display:block;margin-top:12px;color:#cbd5e1}
+input[type=range]{width:100%}
+button{background:#0ea5e9;color:#fff;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer;margin:5px}
+button.secondary{background:#334155}
+.value{color:var(--yellow);font-weight:800}
+table{width:100%;border-collapse:collapse;margin-top:14px}
+th,td{border:1px solid var(--line);padding:9px;text-align:center}
+th{background:#182337}
+.small{font-size:14px;color:var(--muted)}
+.quiz button{display:block;width:100%;text-align:left;background:#182337}
+.answer{display:none;background:#0d1b18;padding:12px;border-radius:8px;margin-top:8px}
+canvas{width:100%;height:260px;background:#08111e;border:1px solid var(--line);border-radius:10px}
+footer{padding:30px 7%;color:var(--muted);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge">DEEP LEARNING — PERTEMUAN 4</span>
+  <h1>“Bagaimana Model Belajar?”</h1>
+  <p>Data → AI salah → AI memperbaiki dirinya → AI mencoba lagi → error mengecil.</p>
+  <p class="small">Modul ini melanjutkan praktik neuron manual, data Excel, dan pengantar CNN dari modul praktik deteksi cacat ban.</p>
+</header>
+
+<main class="container">
+
+<section class="card">
+<h2>1. Tujuan Pertemuan</h2>
+<div class="grid">
+<div><h3>Memahami proses belajar</h3><p>Mahasiswa dapat menjelaskan mengapa model perlu mencoba berulang kali.</p></div>
+<div><h3>Melihat penyebab perubahan</h3><p>Mahasiswa memahami hubungan weight, bias, learning rate, epoch, prediksi, dan loss.</p></div>
+<div><h3>Melakukan eksperimen</h3><p>Mahasiswa mengubah parameter dan mengamati apakah error mengecil atau tidak.</p></div>
+<div><h3>Menjembatani teori → industri</h3><p>Konsep diterapkan pada contoh inspeksi kualitas ban.</p></div>
+</div>
+</section>
+
+<section class="card">
+<h2>2. Cerita Sederhana: AI Belajar Seperti Ini</h2>
+<p>Gunakan kalimat berikut sebagai “benang merah” kuliah:</p>
+<div class="highlight">
+<strong>Saya memberi data → AI membuat prediksi → prediksi bisa salah → kita ukur kesalahannya → AI menghitung arah perbaikan → weight/bias diperbarui → AI mencoba lagi → error diharapkan semakin kecil.</strong>
+</div>
+
+<div class="flow">
+<div class="step"><div class="num">1</div><strong>Data</strong><br>Masukan + target</div>
+<div class="step"><div class="num">2</div><strong>Prediksi</strong><br>Model menghasilkan ŷ</div>
+<div class="step"><div class="num">3</div><strong>Loss</strong><br>Ukur seberapa salah</div>
+<div class="step"><div class="num">4</div><strong>Perbaikan</strong><br>Hitung gradien</div>
+<div class="step"><div class="num">5</div><strong>Update</strong><br>Weight & bias berubah</div>
+<div class="step"><div class="num">6</div><strong>Ulangi</strong><br>Epoch berikutnya</div>
+</div>
+</section>
+
+<section class="card">
+<h2>3. Hubungkan dengan Neuron yang Sudah Dipelajari</h2>
+<p>Pada modul sebelumnya, neuron dijelaskan melalui perhitungan:</p>
+<div class="formula">z = w₁x₁ + w₂x₂ + ... + b</div>
+<p>Jika menggunakan sigmoid:</p>
+<div class="formula">ŷ = σ(z) = 1 / (1 + e⁻ᶻ)</div>
+<p>Sekarang pertanyaan kita berubah:</p>
+<div class="highlight"><strong>“Kalau hasil ŷ salah, bagaimana w dan b tahu harus berubah ke arah mana?”</strong></div>
+<p>Jawabannya adalah <strong>loss + gradient/backpropagation + learning rate</strong>.</p>
+</section>
+
+<section class="card">
+<h2>4. Loss: Meteran Kesalahan Model</h2>
+<p>Loss adalah angka yang membantu kita mengukur seberapa jauh prediksi model dari target.</p>
+<div class="formula">Loss = ukuran kesalahan antara target (y) dan prediksi (ŷ)</div>
+<p>Untuk tahap pengenalan, modul sebelumnya menggunakan contoh MSE:</p>
+<div class="formula">MSE = (1/n) Σ (y - ŷ)²</div>
+<p>Interpretasinya sederhana:</p>
+<div class="grid">
+<div class="good"><strong>Loss kecil</strong><br>Prediksi relatif dekat dengan target.</div>
+<div class="warn"><strong>Loss besar</strong><br>Prediksi masih jauh dari target.</div>
+</div>
+<p class="small">Catatan: pada aplikasi klasifikasi nyata, loss yang digunakan dapat berbeda. Pada pertemuan ini fokusnya adalah memahami mekanisme belajar, bukan menghafal semua jenis loss.</p>
+</section>
+
+<section class="card">
+<h2>5. Dari “Salah” ke “Perbaikan”</h2>
+<p>Misalkan target adalah <strong>1 = ban cacat</strong>. Model menghasilkan prediksi 0,30.</p>
+<table>
+<tr><th>Komponen</th><th>Nilai</th><th>Makna</th></tr>
+<tr><td>Target y</td><td>1</td><td>Ban memang cacat</td></tr>
+<tr><td>Prediksi ŷ</td><td>0,30</td><td>Model baru yakin 30%</td></tr>
+<tr><td>Error sederhana</td><td>1 − 0,30 = 0,70</td><td>Masih cukup jauh</td></tr>
+</table>
+<p>Model tidak “berpikir” seperti manusia. Model menggunakan matematika untuk mengetahui bagaimana perubahan parameter memengaruhi loss.</p>
+<div class="formula">w_baru = w_lama − learning_rate × gradient</div>
+<div class="formula">b_baru = b_lama − learning_rate × gradient_bias</div>
+<div class="highlight"><strong>Intinya:</strong> gradient memberi arah perubahan, sedangkan learning rate menentukan seberapa besar langkah perubahan.</div>
+</section>
+
+<section class="card">
+<h2>6. Simulasi Interaktif: Coba Sendiri</h2>
+<p>Ubah parameter di bawah. Ini adalah simulator konsep untuk memperlihatkan forward pass, prediksi, dan loss.</p>
+
+<div class="grid">
+<div>
+<label>Input x: <span id="xv" class="value">1</span></label>
+<input id="x" type="range" min="-3" max="3" step="0.1" value="1">
+<label>Weight w: <span id="wv" class="value">0.5</span></label>
+<input id="w" type="range" min="-5" max="5" step="0.1" value="0.5">
+<label>Bias b: <span id="bv" class="value">0</span></label>
+<input id="b" type="range" min="-5" max="5" step="0.1" value="0">
+<label>Target y: <span id="yv" class="value">1</span></label>
+<input id="y" type="range" min="0" max="1" step="1" value="1">
+</div>
+
+<div>
+<h3>Hasil Forward Pass</h3>
+<div class="formula">z = w × x + b</div>
+<p>z = <span id="z" class="value"></span></p>
+<p>ŷ = sigmoid(z) = <span id="pred" class="value"></span></p>
+<p>Loss MSE sederhana = <span id="loss" class="value"></span></p>
+<div id="interpret" class="good"></div>
+</div>
+</div>
+</section>
+
+<section class="card">
+<h2>7. Eksperimen #1 — Learning Rate</h2>
+<p>Learning rate dapat dipahami sebagai <strong>ukuran langkah saat model memperbarui parameter</strong>.</p>
+<div class="grid">
+<div><strong>Learning rate kecil</strong><br>Perubahan lebih pelan. Banyak iterasi dapat diperlukan.</div>
+<div><strong>Learning rate besar</strong><br>Perubahan lebih besar. Jika terlalu besar, proses optimasi dapat menjadi tidak stabil.</div>
+</div>
+<div class="highlight"><strong>Aktivitas kelas:</strong> minta mahasiswa membayangkan sedang mencari titik terendah di lembah. Apakah lebih baik melangkah 1 cm, 1 meter, atau 100 meter?</div>
+</section>
+
+<section class="card">
+<h2>8. Eksperimen #2 — Epoch</h2>
+<p><strong>Epoch</strong> adalah satu putaran pembelajaran terhadap seluruh data training.</p>
+<table>
+<tr><th>Epoch</th><th>Gambaran</th></tr>
+<tr><td>1</td><td>Model baru mulai belajar.</td></tr>
+<tr><td>10</td><td>Model sudah mendapat banyak kesempatan memperbaiki parameter.</td></tr>
+<tr><td>100</td><td>Belum tentu otomatis lebih baik; perlu melihat loss dan validasi.</td></tr>
+</table>
+<div class="warn"><strong>Jangan ajarkan “semakin banyak epoch pasti semakin bagus”.</strong> Yang diamati adalah perubahan performa terhadap data training dan data validasi.</div>
+</section>
+
+<section class="card">
+<h2>9. Eksperimen #3 — Weight dan Bias</h2>
+<p>Mahasiswa sudah mengenal weight dan bias dari pertemuan sebelumnya. Sekarang posisinya berubah: <strong>weight dan bias adalah parameter yang dipelajari.</strong></p>
+<div class="grid">
+<div class="step"><strong>Weight</strong><p>Mengatur kontribusi input terhadap neuron.</p></div>
+<div class="step"><strong>Bias</strong><p>Memberikan pergeseran pada nilai sebelum aktivasi.</p></div>
+</div>
+<p>Ketika training berlangsung, nilai-nilai ini bukan angka tetap. Optimizer memperbaruinya berdasarkan gradient.</p>
+</section>
+
+<section class="card">
+<h2>10. Mini Project Industri Ban — “Model Belajar Mendeteksi Ban Cacat”</h2>
+<p>Contoh ini sengaja dibuat sebagai jembatan menuju praktik CNN pada modul sebelumnya. Jangan langsung meminta mahasiswa membuat CNN besar. Fokus pertemuan 4 adalah memahami <strong>proses belajar</strong>.</p>
+
+<h3>Skenario</h3>
+<p>Sebuah pabrik ban ingin membantu proses inspeksi kualitas. Setiap ban memiliki label:</p>
+<table>
+<tr><th>Label</th><th>Arti</th></tr>
+<tr><td>0</td><td>OK / tidak terdeteksi cacat</td></tr>
+<tr><td>1</td><td>NG / terdapat cacat</td></tr>
+</table>
+
+<h3>Versi sederhana untuk memahami konsep</h3>
+<p>Daripada langsung memakai gambar, gunakan fitur numerik buatan sebagai latihan:</p>
+<table>
+<tr><th>Fitur</th><th>Contoh</th><th>Interpretasi</th></tr>
+<tr><td>x₁</td><td>0–1</td><td>indikator tekstur/permukaan yang sudah dinormalisasi</td></tr>
+<tr><td>x₂</td><td>0–1</td><td>indikator bentuk/ketidakteraturan yang sudah dinormalisasi</td></tr>
+<tr><td>y</td><td>0 atau 1</td><td>label OK / NG</td></tr>
+</table>
+
+<p>Tujuan mahasiswa:</p>
+<ol>
+<li>Memberikan data ke neuron.</li>
+<li>Menghitung prediksi.</li>
+<li>Menghitung loss.</li>
+<li>Melihat perubahan weight/bias.</li>
+<li>Mengulang training.</li>
+<li>Membuat tabel “epoch vs loss”.</li>
+<li>Menjelaskan mengapa loss dapat turun.</li>
+</ol>
+
+<div class="good"><strong>Output pembelajaran:</strong> mahasiswa belum harus menghasilkan sistem inspeksi ban yang akurat. Mereka harus mampu menjelaskan secara matematis bagaimana model belajar dari kesalahan.</div>
+</section>
+
+<section class="card">
+<h2>11. Tantangan Kelompok</h2>
+<div class="grid">
+<div>
+<h3>Kelompok A — Learning Rate</h3>
+<p>Bandingkan learning rate kecil, sedang, dan besar. Catat perubahan loss.</p>
+</div>
+<div>
+<h3>Kelompok B — Epoch</h3>
+<p>Bandingkan training 1, 10, dan 50 epoch. Jelaskan perubahan yang diamati.</p>
+</div>
+<div>
+<h3>Kelompok C — Weight/Bias</h3>
+<p>Mulai dari parameter berbeda. Apakah jalur pembelajaran selalu sama?</p>
+</div>
+<div>
+<h3>Kelompok D — Industri Ban</h3>
+<p>Buat analogi data OK/NG dan jelaskan kapan model dapat salah mendeteksi.</p>
+</div>
+</div>
+</section>
+
+<section class="card">
+<h2>12. Hubungkan ke CNN</h2>
+<p>Setelah mahasiswa memahami mekanisme belajar satu neuron, barulah kita naikkan kompleksitas:</p>
+<div class="flow">
+<div class="step"><strong>1 neuron</strong><br>Belajar dari angka</div>
+<div class="step"><strong>Banyak neuron</strong><br>MLP</div>
+<div class="step"><strong>Banyak layer</strong><br>Deep Learning</div>
+<div class="step"><strong>CNN</strong><br>Belajar pola pada gambar</div>
+<div class="step"><strong>Gambar ban</strong><br>OK / NG</div>
+</div>
+<p>Jadi CNN bukan “model yang berbeda dari proses belajar”. CNN tetap melakukan prinsip dasar yang sama: menghasilkan prediksi, menghitung loss, menghitung gradient, memperbarui parameter, lalu mengulang.</p>
+</section>
+
+<section class="card quiz">
+<h2>13. Quiz Cepat</h2>
+<p><strong>1. Apa fungsi loss?</strong></p>
+<button onclick="showAnswer('a1')">A. Mengukur kesalahan prediksi</button>
+<div id="a1" class="answer">Benar. Loss memberikan ukuran seberapa jauh prediksi model dari target.</div>
+
+<p><strong>2. Apa fungsi learning rate?</strong></p>
+<button onclick="showAnswer('a2')">A. Mengatur besar langkah update parameter</button>
+<div id="a2" class="answer">Benar. Learning rate mengontrol ukuran langkah saat parameter diperbarui.</div>
+
+<p><strong>3. Apa yang berubah selama training?</strong></p>
+<button onclick="showAnswer('a3')">A. Parameter seperti weight dan bias</button>
+<div id="a3" class="answer">Benar. Parameter diperbarui menggunakan informasi gradient.</div>
+
+<p><strong>4. Apakah epoch lebih banyak selalu berarti model lebih bagus?</strong></p>
+<button onclick="showAnswer('a4')">A. Tidak selalu</button>
+<div id="a4" class="answer">Benar. Performa perlu diamati pada training dan validasi; terlalu lama belajar dapat menimbulkan masalah seperti overfitting.</div>
+</section>
+
+<section class="card">
+<h2>14. Kalimat Kunci yang Harus Diingat</h2>
+<div class="highlight">
+<h3>DATA → PREDIKSI → LOSS → GRADIENT → UPDATE → ULANGI</h3>
+</div>
+<p>Jika mahasiswa sudah dapat menjelaskan keenam langkah ini dengan contoh industri ban, maka fondasi untuk masuk ke MLP dan CNN sudah terbentuk.</p>
+</section>
+
+</main>
+
+<footer>
+<strong>Pertemuan 4 — Deep Learning Polytechnic</strong><br>
+Disusun sebagai lanjutan dari modul praktik “Deteksi Cacat Ban dengan Deep Learning”: teori neuron → praktik manual → data Excel → pengantar CNN.
+</footer>
+
+<script>
+function sigmoid(z){ return 1/(1+Math.exp(-z)); }
+
+function update(){
+  const x=+document.getElementById('x').value;
+  const w=+document.getElementById('w').value;
+  const b=+document.getElementById('b').value;
+  const y=+document.getElementById('y').value;
+  const z=w*x+b;
+  const p=sigmoid(z);
+  const loss=(y-p)*(y-p);
+
+  document.getElementById('xv').textContent=x.toFixed(1);
+  document.getElementById('wv').textContent=w.toFixed(1);
+  document.getElementById('bv').textContent=b.toFixed(1);
+  document.getElementById('yv').textContent=y.toFixed(0);
+  document.getElementById('z').textContent=z.toFixed(4);
+  document.getElementById('pred').textContent=p.toFixed(4);
+  document.getElementById('loss').textContent=loss.toFixed(4);
+
+  document.getElementById('interpret').innerHTML =
+    loss < 0.05 ? '<strong>Loss kecil.</strong><br>Prediksi relatif dekat dengan target.' :
+    loss < 0.25 ? '<strong>Loss sedang.</strong><br>Model masih perlu belajar.' :
+    '<strong>Loss besar.</strong><br>Prediksi masih jauh dari target.';
+}
+
+document.querySelectorAll('input[type=range]').forEach(e=>e.addEventListener('input',update));
+update();
+
+function showAnswer(id){
+  document.getElementById(id).style.display='block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Learning - Dari Sigmoid ke ReLU &amp; Training</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#5f6b7a;
+  --primary:#2563eb; --primary2:#1d4ed8; --accent:#7c3aed;
+  --success:#059669; --danger:#dc2626; --border:#dfe5ee;
+  --shadow:0 10px 30px rgba(20,35,60,.08);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+header{background:linear-gradient(135deg,#172554,#2563eb);color:white;padding:48px 24px 42px}
+.container{max-width:1180px;margin:auto;padding:0 20px}
+header h1{font-size:clamp(2rem,5vw,3.5rem);margin:8px 0}
+header p{max-width:820px;color:#dbeafe;font-size:1.08rem}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.badge{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);padding:7px 12px;border-radius:999px;font-size:.9rem}
+nav{position:sticky;top:0;z-index:20;background:white;border-bottom:1px solid var(--border);box-shadow:0 3px 15px rgba(0,0,0,.04)}
+.nav-inner{max-width:1180px;margin:auto;padding:10px 20px;display:flex;gap:8px;overflow:auto}
+nav a{white-space:nowrap;text-decoration:none;color:#334155;padding:8px 11px;border-radius:8px;font-size:.9rem}
+nav a:hover{background:#eff6ff;color:var(--primary)}
+section{padding:42px 0}
+h2{font-size:2rem;margin:0 0 12px}
+h3{margin-top:26px}
+.lead{font-size:1.08rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.callout{border-left:5px solid var(--primary);background:#eff6ff;padding:18px 20px;border-radius:10px;margin:20px 0}
+.warn{border-left-color:#f59e0b;background:#fffbeb}
+.success{border-left-color:var(--success);background:#ecfdf5}
+.danger{border-left-color:var(--danger);background:#fef2f2}
+.code{background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;overflow:auto;font-family:Consolas,monospace;font-size:.9rem;line-height:1.55}
+.formula{font-family:Georgia,serif;font-size:1.18rem;background:#f8fafc;border:1px solid var(--border);padding:18px;border-radius:12px;text-align:center;margin:15px 0}
+.flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:25px 0}
+.node{background:white;border:2px solid #93c5fd;border-radius:12px;padding:14px 18px;text-align:center;min-width:125px;box-shadow:0 5px 15px rgba(0,0,0,.06)}
+.node.hidden{border-color:#c4b5fd}
+.node.output{border-color:#86efac}
+.node.danger{border-color:#fca5a5;background:#fef2f2}
+.arrow{font-size:1.7rem;color:#64748b}
+.diagram{background:#f8fafc;border:1px solid var(--border);border-radius:16px;padding:24px;overflow:auto}
+table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;margin-top:12px}
+th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:#eff6ff}
+.small{font-size:.9rem;color:var(--muted)}
+footer{background:#172033;color:#cbd5e1;padding:35px 20px;margin-top:30px}
+button.primary{background:var(--primary);color:white;border:0;padding:12px 18px;border-radius:9px;cursor:pointer;font-weight:600}
+button.primary:hover{background:var(--primary2)}
+input[type=range]{width:100%}
+select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:1rem;background:white}
+
+/* ===== Simulator umum ===== */
+.sim{background:white;border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+@media(max-width:800px){.sim-grid{grid-template-columns:1fr}}
+.sim canvas{width:100%;max-width:420px;height:260px;background:#f8fafc;border:1px solid var(--border);border-radius:12px}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.readout .box{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.readout .box b{display:block;font-size:1.5rem;font-family:Consolas,monospace}
+.grad-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600}
+.tag-dead{background:#fef2f2;color:#991b1b}
+.tag-alive{background:#ecfdf5;color:#065f46}
+.tag-mid{background:#fffbeb;color:#92400e}
+
+/* ===== Backprop visual ===== */
+.bp-stage{background:#f8fafc;border:1px solid var(--border);border-radius:16px;padding:24px;overflow:auto}
+.bp-row{display:flex;justify-content:center;align-items:center;gap:40px;min-width:700px}
+.bp-col{display:flex;flex-direction:column;gap:14px;align-items:center}
+.bp-neuron{width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0f172a;border:3px solid;background:white}
+.bp-neuron.in{border-color:#93c5fd;background:#eff6ff}
+.bp-neuron.hd{border-color:#a78bfa;background:#f5f3ff}
+.bp-neuron.out{border-color:#34d399;background:#ecfdf5}
+.grad-bar{height:12px;border-radius:6px;background:#e2e8f0;overflow:hidden;width:78px}
+.grad-fill{height:100%;background:linear-gradient(90deg,#f87171,#ef4444)}
+.bp-label{font-size:.8rem;color:var(--muted);text-align:center}
+
+/* ===== Loss visual ===== */
+.lossvis{background:#f8fafc;border:1px solid var(--border);border-radius:16px;padding:20px}
+.lossvis svg{width:100%;height:auto}
+
+/* ===== Stack sigmoid simulator ===== */
+.stack-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.stack-box{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stack-box .val{font-family:Consolas,monospace;font-size:1.6rem;font-weight:700}
+@media(max-width:800px){.bp-row{min-width:520px;gap:16px}.stack-compare{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+<header>
+<div class="container">
+  <div class="badge">Deep Learning • Pertemuan Training</div>
+  <h1>Dari Sigmoid ke ReLU, lalu Training</h1>
+  <p>Mengapa menumpuk Sigmoid tidak membuat network lebih pintar — dan bagaimana ReLU mengubah segalanya.</p>
+  <div class="badges">
+    <span class="badge">Review Single Neuron</span>
+    <span class="badge">Sigmoid vs Sigmoid+ReLU</span>
+    <span class="badge">Loss &amp; Backpropagation</span>
+    <span class="badge">PyTorch</span>
+    <span class="badge">Industri Ban</span>
+  </div>
+</div>
+</header>
+
+<nav>
+<div class="nav-inner">
+<a href="#tujuan">Tujuan</a>
+<a href="#review">Review</a>
+<a href="#stack">2 Sigmoid</a>
+<a href="#memudar">Info Memudar</a>
+<a href="#tambahrelu">Tambah ReLU</a>
+<a href="#kurva">Kurva</a>
+<a href="#kesimpulan1">Kesimpulan</a>
+<a href="#training">Training</a>
+<a href="#bukti">Bukti</a>
+<a href="#pytorch">PyTorch</a>
+<a href="#simulator">Simulator</a>
+<a href="#ringkasan">Ringkasan</a>
+</div>
+</nav>
+
+<main class="container">
+
+<!-- ===================== 1. TUJUAN ===================== -->
+<section id="tujuan">
+<h2>1. Tujuan Pertemuan</h2>
+<p class="lead">Di pertemuan sebelumnya kita mengenal <b>satu neuron</b> dengan Sigmoid. Sekarang kita akan menjawab dua pertanyaan besar secara bertahap:</p>
+<div class="grid">
+<div class="card">
+<h3>Pertanyaan 1</h3>
+<p>Kalau saya punya <b>lebih dari satu neuron</b>, bagaimana menyusunnya? Apakah menumpuk Sigmoid membuat network lebih pintar?</p>
+</div>
+<div class="card">
+<h3>Pertanyaan 2</h3>
+<p>Kenapa hidden layer sebaiknya memakai <b>ReLU</b>, bukan Sigmoid? Apa bedanya secara nyata?</p>
+</div>
+<div class="card">
+<h3>Pertanyaan 3</h3>
+<p>Setelah susunan network benar, <b>bagaimana network belajar</b>? (loss, gradient descent, backpropagation)</p>
+</div>
+<div class="card">
+<h3>Praktik</h3>
+<p>Membandingkan 3 konfigurasi di PyTorch: <b>tanpa activation</b>, <b>Sigmoid</b>, dan <b>ReLU</b>.</p>
+</div>
+</div>
+<div class="callout">
+<b>Alur pertemuan ini:</b><br>
+Kita mulai dari yang <b>sudah dikenal</b> (single neuron + Sigmoid), lalu <b>bertahap</b> menuju ReLU, baru masuk ke training. Tidak ada lompatan konsep.
+</div>
+</section>
+
+<!-- ===================== 2. REVIEW ===================== -->
+<section id="review">
+<h2>2. Review: Single Neuron dengan Sigmoid</h2>
+<p>Mari kita ingat kembali apa yang sudah dipelajari di pertemuan lalu.</p>
+
+<div class="flow">
+<div class="node">Input<br><b>x</b></div>
+<div class="arrow">→</div>
+<div class="node hidden">Weighted Sum<br><b>z = wx + b</b></div>
+<div class="arrow">→</div>
+<div class="node output">Sigmoid<br><b>σ(z)</b></div>
+<div class="arrow">→</div>
+<div class="node output">Output<br><b>ŷ</b></div>
+</div>
+
+<div class="formula">σ(z) = 1 / (1 + e<sup>−z</sup>)</div>
+
+<div class="grid">
+<div class="card">
+<h3>Contoh mudah: Lampu dari 1 saklar</h3>
+<table>
+<tr><th>Saklar (x)</th><th>Output Sigmoid</th><th>Lampu</th></tr>
+<tr><td>−2 (mati)</td><td>0.12</td><td>Mati</td></tr>
+<tr><td>0 (netral)</td><td>0.50</td><td>Ambang</td></tr>
+<tr><td>+2 (nyala)</td><td>0.88</td><td>Nyala</td></tr>
+</table>
+<p class="small">Sigmoid memetakan angka apa pun ke rentang 0–1. Cocok untuk "ya/tidak".</p>
+</div>
+<div class="card">
+<h3>Keterbatasan single neuron</h3>
+<ul>
+<li>Hanya bisa memisahkan masalah yang <b>sederhana</b></li>
+<li>Tidak bisa mempelajari pola yang lebih rumit (misal: lampu menyala hanya kalau <b>kedua</b> saklar dalam posisi tertentu)</li>
+<li>Solusinya: tambahkan neuron → jadi network</li>
+</ul>
+</div>
+</div>
+
+<div class="callout warn">
+<b>Pertanyaan yang muncul:</b><br>
+"Kalau saya tambahkan neuron dan tetap pakai Sigmoid semua, apakah network jadi lebih pintar?"<br><br>
+Mari kita cari tahu di bagian berikutnya.
+</div>
+</section>
+
+<!-- ===================== 3. DUA SIGMOID DITUMPUK ===================== -->
+<section id="stack">
+<h2>3. Kalau Dua Sigmoid Ditumpuk, Apa yang Terjadi?</h2>
+<p class="lead">Ini pertanyaan sederhana, tapi jawabannya mengejutkan.</p>
+
+<p>Bayangkan kita menyusun dua neuron Sigmoid secara berurutan:</p>
+
+<div class="flow">
+<div class="node">Input<br><b>x</b></div>
+<div class="arrow">→</div>
+<div class="node hidden">Neuron 1<br><b>σ(z₁)</b></div>
+<div class="arrow">→</div>
+<div class="node hidden">Neuron 2<br><b>σ(z₂)</b></div>
+<div class="arrow">→</div>
+<div class="node output">Output<br><b>ŷ</b></div>
+</div>
+
+<h3>Mari kita coba dengan angka</h3>
+<p>Anggap semua weight = 1 dan bias = 0 (untuk menyederhanakan).</p>
+
+<table>
+<tr><th>Input x</th><th>Setelah neuron 1: σ(x)</th><th>Setelah neuron 2: σ(σ(x))</th><th>Berubah banyak?</th></tr>
+<tr><td>−3.0</td><td>0.047</td><td>0.512</td><td>Ya, tapi balik ke tengah</td></tr>
+<tr><td>−1.0</td><td>0.269</td><td>0.567</td><td>Sedikit</td></tr>
+<tr><td>0.0</td><td>0.500</td><td>0.622</td><td>Sedikit</td></tr>
+<tr><td>+1.0</td><td>0.731</td><td>0.675</td><td>Sedikit</td></tr>
+<tr><td>+3.0</td><td>0.953</td><td>0.722</td><td>Sedikit</td></tr>
+</table>
+
+<div class="callout danger">
+<b>Perhatikan!</b><br>
+Setelah dua Sigmoid, output untuk x = −3 dan x = +3 hanya berbeda tipis (0.512 vs 0.722). Padahal inputnya beda jauh!<br><br>
+Artinya: <b>informasi tentang "seberapa kuat input" menjadi hilang.</b> Semua input "dibungkus" ke sekitar 0.5–0.7.
+</div>
+
+<h3>Simulator: 1 Sigmoid vs 2 Sigmoid</h3>
+<p>Geser input dan lihat sendiri bagaimana output 2 Sigmoid "menyempit" ke tengah.</p>
+
+<div class="sim">
+  <label>x = <b id="stackXVal">0.00</b></label>
+  <input id="stackX" type="range" min="-5" max="5" step="0.1" value="0">
+  <div class="stack-compare">
+    <div class="stack-box">
+      <div class="small">1 Sigmoid</div>
+      <div class="val" id="oneSigma" style="color:#2563eb">0.500</div>
+    </div>
+    <div class="stack-box">
+      <div class="small">2 Sigmoid ditumpuk</div>
+      <div class="val" id="twoSigma" style="color:#dc2626">0.622</div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:14px">
+    <b>Perhatikan:</b> berapa pun x yang Anda pilih, output 2 Sigmoid selalu terjepit di antara 0.5 dan 0.73. Informasi dari input <b>memudar</b>.
+  </div>
+</div>
+
+<div class="callout warn">
+<b>Analogi mudah:</b><br>
+Bayangkan Anda menerjemahkan kalimat dari Indonesia → Inggris → Indonesia lagi. Hasilnya tidak lebih kaya — malah bisa lebih dangkal. Setiap "pembungkusan" (Sigmoid) <b>memampatkan</b> informasi.
+</div>
+</section>
+
+<!-- ===================== 4. KENAPA INFO MEMUDAR ===================== -->
+<section id="memudar">
+<h2>4. Kenapa Informasi Memudar?</h2>
+<p>Ini kunci untuk memahami mengapa ReLU penting.</p>
+
+<div class="grid">
+<div class="card">
+<h3>Apa yang dilakukan Sigmoid?</h3>
+<p>Sigmoid <b>memaksa</b> semua angka masuk ke rentang 0–1, dengan bentuk kurva S.</p>
+<ul>
+<li>Input sangat negatif → output mendekati <b>0</b></li>
+<li>Input sangat positif → output mendekati <b>1</b></li>
+<li>Input di tengah → output sekitar <b>0.5</b></li>
+</ul>
+<p class="small">Masalahnya: begitu output mendekati 0 atau 1, perubahan input <b>tidak lagi mengubah output</b>. Kurvanya mendatar.</p>
+</div>
+<div class="card">
+<h3>Apa yang dilakukan ReLU?</h3>
+<p>ReLU(x) = max(0, x). Tidak ada "pembungkusan".</p>
+<ul>
+<li>Input negatif → output <b>0</b> (mati)</li>
+<li>Input positif → output <b>sama dengan input</b> (utuh)</li>
+</ul>
+<p class="small">Informasi di x &gt; 0 <b>lewat apa adanya</b>. Tidak ada pemampatan.</p>
+</div>
+</div>
+
+<h3>Tabel: Seberapa Banyak Informasi yang Lolos?</h3>
+<table>
+<tr><th>Activation</th><th>Gradient maksimum</th><th>Informasi yang lolos</th><th>Cocok untuk</th></tr>
+<tr>
+  <td><b>Sigmoid</b></td>
+  <td>0.25</td>
+  <td style="color:#dc2626"><b>~25%</b> — banyak hilang</td>
+  <td>Output biner</td>
+</tr>
+<tr>
+  <td><b>Tanh</b></td>
+  <td>1.0 (tapi cepat menipis)</td>
+  <td style="color:#b45309"><b>~50%</b> — lebih baik, tetap hilang</td>
+  <td>Jarang</td>
+</tr>
+<tr>
+  <td><b>ReLU</b></td>
+  <td>1 (untuk x &gt; 0)</td>
+  <td style="color:#059669"><b>100%</b> — utuh</td>
+  <td><b>Hidden layer</b></td>
+</tr>
+</table>
+
+<div class="callout">
+<b>Angka konkret — perhatikan betapa kecilnya perubahan:</b>
+<div style="font-family:Consolas;font-size:1rem;margin-top:10px;line-height:1.8">
+Input x = 3.0 → σ(3.0) = <b>0.953</b><br>
+Input x = 4.0 → σ(4.0) = <b>0.982</b> &nbsp;&nbsp;<span class="small">(beda input 1.0, beda output hanya 0.03)</span><br><br>
+Bandingkan dengan ReLU:<br>
+Input x = 3.0 → ReLU(3.0) = <b>3.0</b><br>
+Input x = 4.0 → ReLU(4.0) = <b>4.0</b> &nbsp;&nbsp;<span class="small">(beda input 1.0, beda output 1.0 — utuh!)</span>
+</div>
+</div>
+
+<div class="callout danger">
+<b>Kesimpulan bagian ini:</b><br>
+Sigmoid di hidden layer membuat informasi menipis setiap kali melewati satu layer. Menambah layer Sigmoid justru <b>memperparah</b> pemudaran ini. Inilah yang disebut <i>vanishing information</i> (informasi yang menghilang).
+</div>
+</section>
+
+<!-- ===================== 5. TAMBAH RELU ===================== -->
+<section id="tambahrelu">
+<h2>5. Sekarang, Coba Tambah ReLU di Tengah</h2>
+<p class="lead">Inilah momen penting: apa yang berubah kalau hidden layer pakai ReLU?</p>
+
+<p>Kita susun ulang: neuron pertama pakai <b>ReLU</b>, neuron kedua tetap <b>Sigmoid</b>.</p>
+
+<div class="flow">
+<div class="node">Input<br><b>x</b></div>
+<div class="arrow">→</div>
+<div class="node hidden" style="border-color:#86efac;background:#ecfdf5">Neuron 1<br><b>ReLU(z₁)</b></div>
+<div class="arrow">→</div>
+<div class="node hidden">Neuron 2<br><b>σ(z₂)</b></div>
+<div class="arrow">→</div>
+<div class="node output">Output<br><b>ŷ</b></div>
+</div>
+
+<h3>Mari kita coba dengan angka yang sama</h3>
+<table>
+<tr><th>Input x</th><th>Setelah ReLU</th><th>Setelah Sigmoid</th><th>Masih bisa dibedakan?</th></tr>
+<tr><td>−3.0</td><td>0.000</td><td>0.500</td><td>Ya — jelas terpisah</td></tr>
+<tr><td>−1.0</td><td>0.000</td><td>0.500</td><td>Ya</td></tr>
+<tr><td>0.0</td><td>0.000</td><td>0.500</td><td>Ya</td></tr>
+<tr><td>+1.0</td><td>1.000</td><td>0.731</td><td>Ya</td></tr>
+<tr><td>+3.0</td><td>3.000</td><td>0.953</td><td>Ya — sangat berbeda</td></tr>
+</table>
+
+<div class="callout success">
+<b>Perhatikan bedanya!</b><br>
+Dengan ReLU di depan, output x = −3 dan x = +3 sekarang <b>0.500 vs 0.953</b> — jauh berbeda. ReLU <b>mempertahankan</b> informasi tentang "seberapa kuat input", lalu Sigmoid di belakang mengubahnya menjadi bentuk probabilitas.
+</div>
+
+<h3>Analogi Sederhana</h3>
+<div class="grid">
+<div class="card">
+<h3>Sigmoid saja = Corong sempit</h3>
+<p>Semua air dipaksa masuk melalui corong sempit. Tekanan dan kecepatan air berubah — informasi tentang "seberapa deras air masuk" hilang.</p>
+</div>
+<div class="card">
+<h3>ReLU = Keran air</h3>
+<p>Kalau alirannya positif, air lewat <b>apa adanya</b> (tidak dipadatkan). Kalau negatif, keran ditutup. Informasi tentang "seberapa deras" tetap terjaga.</p>
+</div>
+</div>
+
+<div class="callout warn">
+<b>Penting:</b> ReLU <b>tidak menggantikan</b> Sigmoid di output layer. Sigmoid tetap dipakai di <b>ujung</b> network (untuk mengubah hasil menjadi probabilitas 0–1). Yang berubah adalah <b>hidden layer</b>: dari Sigmoid → ReLU.
+</div>
+</section>
+
+<!-- ===================== 6. VISUAL KURVA ===================== -->
+<section id="kurva">
+<h2>6. Visual Perbandingan Kurva</h2>
+<p>Mari lihat bentuk kurva keduanya berdampingan.</p>
+
+<div class="diagram">
+<div style="display:flex;gap:30px;justify-content:center;flex-wrap:wrap">
+
+  <!-- Sigmoid -->
+  <div style="text-align:center">
+    <svg viewBox="0 0 260 220" width="260" height="220">
+      <line x1="20" y1="190" x2="240" y2="190" stroke="#94a3b8"/>
+      <line x1="130" y1="20" x2="130" y2="190" stroke="#94a3b8"/>
+      <path d="M20 185 Q130 185 130 105 Q130 25 240 25" stroke="#2563eb" stroke-width="3" fill="none"/>
+      <text x="200" y="15" font-size="12" fill="#2563eb" font-weight="700">Sigmoid</text>
+      <text x="30" y="210" font-size="11" fill="#64748b">negatif</text>
+      <text x="200" y="210" font-size="11" fill="#64748b">positif</text>
+    </svg>
+    <div class="small">Semua "dibungkus" ke 0–1</div>
+  </div>
+
+  <!-- ReLU -->
+  <div style="text-align:center">
+    <svg viewBox="0 0 260 220" width="260" height="220">
+      <line x1="20" y1="190" x2="240" y2="190" stroke="#94a3b8"/>
+      <line x1="130" y1="20" x2="130" y2="190" stroke="#94a3b8"/>
+      <line x1="20" y1="190" x2="130" y2="190" stroke="#059669" stroke-width="3"/>
+      <line x1="130" y1="190" x2="230" y2="40" stroke="#059669" stroke-width="3"/>
+      <text x="200" y="15" font-size="12" fill="#059669" font-weight="700">ReLU</text>
+      <text x="30" y="210" font-size="11" fill="#64748b">negatif → 0</text>
+      <text x="180" y="210" font-size="11" fill="#64748b">positif → utuh</text>
+    </svg>
+    <div class="small">Utuh untuk x &gt; 0</div>
+  </div>
+
+</div>
+</div>
+
+<h3>Seberapa Banyak Informasi yang Lolos?</h3>
+<div style="margin-top:14px">
+  <div class="small"><b>Sigmoid</b> — gradient maksimum 0.25</div>
+  <div style="background:#e2e8f0;border-radius:8px;height:18px;overflow:hidden;margin-bottom:14px">
+    <div style="background:#dc2626;width:25%;height:100%"></div>
+  </div>
+
+  <div class="small"><b>Tanh</b> — gradient maksimum 1 tapi cepat menipis</div>
+  <div style="background:#e2e8f0;border-radius:8px;height:18px;overflow:hidden;margin-bottom:14px">
+    <div style="background:#b45309;width:50%;height:100%"></div>
+  </div>
+
+  <div class="small"><b>ReLU</b> — gradient = 1 untuk x &gt; 0</div>
+  <div style="background:#e2e8f0;border-radius:8px;height:18px;overflow:hidden">
+    <div style="background:#059669;width:100%;height:100%"></div>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 7. KESIMPULAN SEMENTARA ===================== -->
+<section id="kesimpulan1">
+<h2>7. Kesimpulan Sementara</h2>
+<p class="lead">Sebelum masuk ke training, ini yang harus diingat dari eksperimen konsep di atas.</p>
+
+<table>
+<tr><th>Pertanyaan</th><th>Sigmoid saja</th><th>Sigmoid + ReLU</th></tr>
+<tr><td>Bisa bedakan pola sederhana?</td><td style="color:#059669">✅ Ya</td><td style="color:#059669">✅ Ya</td></tr>
+<tr><td>Bisa bedakan pola kompleks?</td><td style="color:#dc2626">❌ Tidak</td><td style="color:#059669">✅ Ya</td></tr>
+<tr><td>Informasi tersimpan?</td><td style="color:#dc2626">Memudar tiap layer</td><td style="color:#059669">Utuh di x &gt; 0</td></tr>
+<tr><td>Layer bertambah = lebih pintar?</td><td style="color:#dc2626">❌ Tidak</td><td style="color:#059669">✅ Ya</td></tr>
+<tr><td>Cocok untuk output biner?</td><td style="color:#059669">✅ Ya</td><td style="color:#059669">✅ Ya (di output)</td></tr>
+</table>
+
+<div class="callout success">
+<b>Kalimat kunci yang harus diingat mahasiswa:</b><br>
+"Single neuron dengan Sigmoid itu cukup untuk masalah sederhana. Tapi begitu kita butuh network yang lebih dalam untuk pola yang lebih rumit, kita butuh ReLU di hidden layer. Bukan karena ReLU lebih modern, tapi karena ReLU tidak memampatkan informasi seperti Sigmoid."
+</div>
+
+<div class="callout">
+<b>Aturan praktis yang akan dipakai seterusnya:</b>
+<ul>
+<li><b>Hidden layer</b> → <b>ReLU</b></li>
+<li><b>Output biner</b> → <b>Sigmoid</b></li>
+<li><b>Output multiclass</b> → <b>Softmax</b> (akan dibahas nanti)</li>
+<li><b>Output regresi</b> → <b>Linear</b> (tanpa activation)</li>
+</ul>
+</div>
+</section>
+
+<!-- ===================== 8. TRAINING ===================== -->
+<section id="training">
+<h2>8. Sekarang: Bagaimana Network Belajar?</h2>
+<p class="lead">Kita sudah tahu susunan network yang baik. Tapi dari mana weight yang tepat berasal?</p>
+
+<div class="callout">
+<b>Analogi melempar panah:</b><br>
+Bayangkan Anda melempar panah ke papan target. Lemparan pertama meleset. Anda lihat seberapa jauh dari pusat, lalu koreksi lemparan berikutnya. Network belajar dengan cara yang sama.
+</div>
+
+<h3>8.1 Loss Function — "Seberapa Salah Prediksi Saya?"</h3>
+<p>Loss adalah satu angka yang merangkum: seberapa jauh prediksi dari jawaban benar.</p>
+
+<div class="diagram" style="text-align:center">
+<svg viewBox="0 0 620 170" width="100%" style="max-width:620px">
+  <line x1="60" y1="110" x2="560" y2="110" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="60" y="140" font-size="13" fill="#64748b">0</text>
+  <text x="550" y="140" font-size="13" fill="#64748b">1</text>
+
+  <circle cx="460" cy="110" r="9" fill="#059669"/>
+  <text x="430" y="95" font-size="13" fill="#059669" font-weight="600">Target = 1</text>
+
+  <circle cx="200" cy="110" r="9" fill="#dc2626"/>
+  <text x="150" y="95" font-size="13" fill="#dc2626" font-weight="600">Prediksi = 0.28</text>
+
+  <line x1="200" y1="110" x2="460" y2="110" stroke="#f59e0b" stroke-width="4" stroke-dasharray="6 4"/>
+  <text x="280" y="160" font-size="14" fill="#b45309" font-weight="700">loss besar → prediksi jauh</text>
+</svg>
+</div>
+
+<p>Untuk klasifikasi biner, kita pakai <b>Binary Cross-Entropy (BCE)</b>:</p>
+<div class="formula">L = −[ y · log(ŷ) + (1 − y) · log(1 − ŷ) ]</div>
+
+<div class="callout">
+<b>Bacaan visual rumus ini:</b>
+<ul>
+<li>Jika target y = 1 dan prediksi ŷ = 0.99 → loss ≈ 0.01 (hampir sempurna)</li>
+<li>Jika target y = 1 dan prediksi ŷ = 0.10 → loss ≈ 2.30 (sangat salah)</li>
+<li>Loss menghukum prediksi yang percaya diri tapi salah jauh lebih berat</li>
+</ul>
+</div>
+
+<h3>8.2 Gradient Descent — "Ke Arah Mana Bergerak?"</h3>
+<p>Bayangkan loss sebagai lembah. Kita ingin sampai ke dasar (loss = 0).</p>
+
+<div class="diagram" style="text-align:center">
+<svg viewBox="0 0 620 220" width="100%" style="max-width:620px">
+  <path d="M 40 60 Q 300 260 580 60" stroke="#2563eb" stroke-width="3" fill="none"/>
+  <circle cx="180" cy="118" r="12" fill="#dc2626"/>
+  <line x1="180" y1="118" x2="245" y2="150" stroke="#059669" stroke-width="4" marker-end="url(#arr)"/>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#059669"/>
+    </marker>
+  </defs>
+  <text x="250" y="140" font-size="13" fill="#059669" font-weight="600">arah turun (gradient)</text>
+  <text x="470" y="180" font-size="13" fill="#64748b">dasar = loss minimum</text>
+</svg>
+</div>
+
+<div class="formula">w ← w − η · ∂L/∂w</div>
+<p class="small" style="text-align:center">η (eta) = <b>learning rate</b> — seberapa besar langkah yang diambil</p>
+
+<div class="grid">
+<div class="card">
+<h3 style="color:#dc2626">η terlalu kecil</h3>
+<p>Langkah mungil. Konvergen, tapi sangat lambat. Butuh ribuan epoch.</p>
+</div>
+<div class="card">
+<h3 style="color:#059669">η pas</h3>
+<p>Turun mulus dan cepat. Ini yang kita inginkan.</p>
+</div>
+<div class="card">
+<h3 style="color:#b45309">η terlalu besar</h3>
+<p>Melompati lembah, bahkan mental ke atas. Loss tidak turun.</p>
+</div>
+</div>
+
+<h3>8.3 Backpropagation — "Weight Mana yang Paling Bersalah?"</h3>
+<p>Loss memberi tahu seberapa salah. Backpropagation mencari tahu weight mana yang harus diubah: error mengalir mundur dari output ke input.</p>
+
+<div class="bp-stage">
+<div class="bp-row">
+  <div class="bp-col">
+    <div class="bp-neuron in">x</div>
+    <div class="bp-label">Input</div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="bp-col">
+    <div class="bp-neuron hd">h₁</div>
+    <div class="grad-bar"><div class="grad-fill" style="width:20%"></div></div>
+    <div class="bp-label">gradient kecil</div>
+  </div>
+  <div class="bp-col">
+    <div class="bp-neuron hd">h₂</div>
+    <div class="grad-bar"><div class="grad-fill" style="width:55%"></div></div>
+    <div class="bp-label">gradient sedang</div>
+  </div>
+  <div class="arrow">→</div>
+  <div class="bp-col">
+    <div class="bp-neuron out">ŷ</div>
+    <div class="grad-bar"><div class="grad-fill" style="width:100%"></div></div>
+    <div class="bp-label">gradient besar</div>
+  </div>
+</div>
+<p class="small" style="text-align:center;margin-top:18px">Panah besar = gradient besar = weight ini paling berpengaruh terhadap loss.</p>
+</div>
+
+<div class="callout success">
+<b>Kaitkan dengan ReLU yang tadi dibahas!</b><br>
+Saat error mengalir mundur melewati hidden layer:
+<ul>
+<li>Jika hidden pakai <b>Sigmoid</b> → gradient dikalikan ≤ 0.25 tiap layer → error menipis → layer awal nyaris tidak belajar.</li>
+<li>Jika hidden pakai <b>ReLU</b> → gradient dikalikan 1 (untuk x &gt; 0) → error mengalir utuh → semua layer ikut belajar.</li>
+</ul>
+</div>
+</section>
+
+<!-- ===================== 9. BUKTI ===================== -->
+<section id="bukti">
+<h2>9. Bukti Kuantitatif</h2>
+<p>Kalau teori di atas benar, maka saat kita training network dengan data yang sama, <b>hanya dengan mengganti activation function</b>, hasilnya harus berbeda.</p>
+
+<div class="lossvis">
+<svg viewBox="0 0 620 260" width="100%" style="max-width:620px">
+  <line x1="60" y1="220" x2="600" y2="220" stroke="#94a3b8"/>
+  <line x1="60" y1="20"  x2="60"  y2="220" stroke="#94a3b8"/>
+  <text x="10" y="40" font-size="12" fill="#64748b">Loss</text>
+  <text x="560" y="245" font-size="12" fill="#64748b">Epoch</text>
+
+  <line x1="60" y1="60" x2="600" y2="60" stroke="#dc2626" stroke-width="3"/>
+  <text x="510" y="52" font-size="12" fill="#dc2626" font-weight="700">Tanpa activation</text>
+
+  <path d="M60 60 Q 250 55 600 130" stroke="#b45309" stroke-width="3" fill="none"/>
+  <text x="510" y="122" font-size="12" fill="#b45309" font-weight="700">Sigmoid</text>
+
+  <path d="M60 60 Q 140 40 250 200 L600 205" stroke="#059669" stroke-width="3" fill="none"/>
+  <text x="510" y="196" font-size="12" fill="#059669" font-weight="700">ReLU</text>
+</svg>
+</div>
+
+<div class="callout success">
+<b>Yang akan kita lihat di praktik nanti:</b><br>
+Dengan data yang sama, arsitektur sama, jumlah neuron sama, optimizer sama — <b>hanya activation di hidden layer yang berbeda</b>:
+<ul>
+<li>Tanpa activation → loss <b>mandek</b> (seperti tebak)</li>
+<li>Sigmoid → loss turun <b>lambat</b></li>
+<li>ReLU → loss turun <b>cepat dan dalam</b></li>
+</ul>
+</div>
+</section>
+
+<!-- ===================== 10. PYTORCH ===================== -->
+<section id="pytorch">
+<h2>10. Praktik PyTorch — 3 Eksperimen</h2>
+<p>Sekarang kita buktikan teorinya dengan kode nyata. Studi kasus: pabrik ban, klasifikasi <b>Baik</b> / <b>Perlu Perbaikan</b>.</p>
+
+<h3>Dataset & Persiapan</h3>
+<div class="code">
+import torch
+import torch.nn as nn
+import matplotlib.pyplot as plt
+
+torch.manual_seed(42)
+
+# ====== Dataset sintetis: 200 ban ======
+# Fitur: suhu, tekanan, waktu curing, rasio karet
+n = 200
+X = torch.rand(n, 4)
+X[:, 0] = X[:, 0] * 40 + 140      # suhu 140-180
+X[:, 1] = X[:, 1] * 10 + 15       # tekanan 15-25
+X[:, 2] = X[:, 2] * 7  + 8        # waktu 8-15
+X[:, 3] = X[:, 3] * 0.4 + 0.4     # rasio 0.4-0.8
+
+# Aturan non-linear: ban baik jika suhu di rentang "ideal" (150-165)
+# dan tekanan cukup.
+suhu_ideal = ((X[:, 0] > 150) & (X[:, 0] < 165)).float()
+tekanan_ok = (X[:, 1] > 19).float()
+y = ((suhu_ideal * 0.7 + tekanan_ok * 0.3) > 0.6).float().unsqueeze(1)
+
+# Normalisasi fitur (penting untuk training stabil)
+X = (X - X.mean(0)) / X.std(0)
+</div>
+
+<h3>Arsitektur & Fungsi Training</h3>
+<div class="code">
+def build_model(hidden_activation):
+    return nn.Sequential(
+        nn.Linear(4, 8),
+        hidden_activation,
+        nn.Linear(8, 8),
+        hidden_activation,
+        nn.Linear(8, 1),
+        nn.Sigmoid()                 # output tetap Sigmoid
+    )
+
+def train(hidden_activation, epochs=300, lr=0.01):
+    torch.manual_seed(42)
+    model = build_model(hidden_activation)
+    loss_fn = nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    losses = []
+    for epoch in range(epochs):
+        y_pred = model(X)
+        loss = loss_fn(y_pred, y)
+        optimizer.zero_grad()
+        loss.backward()              # <-- backpropagation
+        optimizer.step()             # <-- update weight
+        losses.append(loss.item())
+    return losses
+</div>
+
+<h3>Bandingkan 3 Konfigurasi</h3>
+<div class="code">
+configs = {
+    "Tanpa Activation": nn.Identity(),
+    "Sigmoid":          nn.Sigmoid(),
+    "ReLU":             nn.ReLU(),
+}
+
+results = {}
+for name, act in configs.items():
+    losses = train(act)
+    results[name] = losses
+    print(f"{name:20s} | Loss akhir: {losses[-1]:.4f}")
+</div>
+
+<h3>Visualisasi Hasil</h3>
+<div class="code">
+plt.figure(figsize=(10, 5))
+for name, losses in results.items():
+    plt.plot(losses, label=name, linewidth=2)
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Perbandingan Activation Function di Hidden Layer")
+plt.legend()
+plt.grid(True)
+plt.show()
+</div>
+
+<div class="callout success">
+<b>Pesan utama eksperimen:</b><br>
+Data sama, arsitektur sama, jumlah neuron sama, optimizer sama. Yang berbeda <b>hanya activation function di hidden layer</b>. ReLU membuat loss turun jauh lebih cepat dan lebih dalam. Inilah buktinya secara kuantitatif.
+</div>
+</section>
+
+<!-- ===================== 11. SIMULATOR ===================== -->
+<section id="simulator">
+<h2>11. Simulator Activation Function</h2>
+<p>Geser slider untuk melihat nilai fungsi dan <b>gradient</b>-nya di setiap titik. Perhatikan kapan gradient <b>mati</b> (merah) dan kapan <b>hidup</b> (hijau).</p>
+
+<div class="sim">
+  <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+    <label><b>Activation:</b></label>
+    <select id="actType">
+      <option value="sigmoid">Sigmoid</option>
+      <option value="tanh">Tanh</option>
+      <option value="relu" selected>ReLU</option>
+    </select>
+  </div>
+
+  <div class="sim-grid">
+    <div>
+      <label>x = <b id="xVal">0.00</b></label>
+      <input id="xSlider" type="range" min="-5" max="5" step="0.05" value="0">
+      <canvas id="plot" width="420" height="260"></canvas>
+    </div>
+    <div>
+      <div class="readout">
+        <div class="box"><div class="small">f(x)</div><b id="fx">0.00</b></div>
+        <div class="box"><div class="small">f'(x)</div><b id="dfx">0.00</b></div>
+      </div>
+      <div style="margin-top:14px;text-align:center">
+        <span id="tag" class="grad-tag tag-alive">gradient hidup</span>
+      </div>
+      <div class="callout" style="margin-top:16px">
+        <b id="explain">Gradient ReLU = 1 untuk x &gt; 0. Error mengalir utuh saat backpropagation.</b>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===================== 12. RINGKASAN ===================== -->
+<section id="ringkasan">
+<h2>12. Ringkasan Pertemuan</h2>
+<table>
+<tr><th>Konsep</th><th>Inti</th></tr>
+<tr><td>Single neuron + Sigmoid</td><td>Cukup untuk masalah sederhana. Memetakan input ke rentang 0–1.</td></tr>
+<tr><td>Menumpuk Sigmoid</td><td><b>Tidak</b> membuat network lebih pintar. Informasi memudar tiap layer.</td></tr>
+<tr><td>Sigmoid + ReLU di hidden</td><td>ReLU mempertahankan informasi → network bisa belajar pola kompleks.</td></tr>
+<tr><td>Loss (BCE)</td><td>Mengukur seberapa salah prediksi. BCE untuk klasifikasi biner.</td></tr>
+<tr><td>Gradient descent</td><td>Bergerak ke arah yang mengurangi loss. Diatur learning rate η.</td></tr>
+<tr><td>Backpropagation</td><td>Error mengalir mundur untuk menghitung gradient tiap weight.</td></tr>
+<tr><td>Update weight</td><td>w ← w − η · ∂L/∂w</td></tr>
+<tr><td>ReLU &amp; gradient</td><td>Gradient = 1 untuk x &gt; 0 → error mengalir utuh → hidden layer belajar cepat.</td></tr>
+<tr><td>PyTorch</td><td><code>loss.backward()</code> + <code>optimizer.step()</code> = satu iterasi training.</td></tr>
+</table>
+
+<div class="callout success">
+<h3 style="margin-top:0">Kalimat penutup untuk mahasiswa</h3>
+<p style="font-size:1.15rem">
+"Single neuron dengan Sigmoid belajar satu transformasi sederhana. Kalau kita menumpuk Sigmoid, network tidak menjadi lebih pintar — informasinya justru memudar. Dengan menambahkan ReLU di hidden layer, informasi tetap utuh, dan network benar-benar bisa belajar pola yang lebih kompleks. Itulah mengapa hidden layer memakai ReLU, dan output memakai Sigmoid."
+</p>
+</div>
+
+<div class="callout warn">
+<b>Preview pertemuan berikutnya:</b> optimizer yang lebih pintar (SGD → Momentum → Adam), cara mengenali overfitting, dan strategi regulasi (dropout, early stopping).
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="container">
+<b>Deep Learning — Dari Sigmoid ke ReLU &amp; Training</b>
+<p>Materi dirancang sebagai jembatan bertahap dari single neuron menuju training nyata, dengan penekanan visual pada peran ReLU.</p>
+</div>
+</footer>
+
+<script>
+/* ================== SIMULATOR 1: 1 SIGMOID vs 2 SIGMOID ================== */
+function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+
+function updateStack(){
+  const x = parseFloat(document.getElementById('stackX').value);
+  document.getElementById('stackXVal').textContent = x.toFixed(2);
+  const one = sigmoid(x);
+  const two = sigmoid(sigmoid(x));
+  document.getElementById('oneSigma').textContent = one.toFixed(3);
+  document.getElementById('twoSigma').textContent = two.toFixed(3);
+}
+document.getElementById('stackX').addEventListener('input', updateStack);
+updateStack();
+
+/* ================== SIMULATOR 2: ACTIVATION FUNCTION ================== */
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+function f(kind, x){
+  if(kind==='sigmoid') return 1/(1+Math.exp(-x));
+  if(kind==='tanh')    return Math.tanh(x);
+  if(kind==='relu')    return Math.max(0,x);
+}
+function df(kind, x){
+  if(kind==='sigmoid'){ const s=f('sigmoid',x); return s*(1-s); }
+  if(kind==='tanh'){ const t=f('tanh',x); return 1-t*t; }
+  if(kind==='relu')    return x>0?1:0;
+}
+
+function toPx(x,y){
+  const xMin=-5,xMax=5,yMin=-1.3,yMax=1.3;
+  return [
+    40 + (x - xMin)/(xMax-xMin) * (W-60),
+    H-40 - (y - yMin)/(yMax-yMin) * (H-60)
+  ];
+}
+
+function draw(){
+  const kind = document.getElementById('actType').value;
+  const x = parseFloat(document.getElementById('xSlider').value);
+
+  ctx.clearRect(0,0,W,H);
+
+  // sumbu
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  let [ax0, ay0] = toPx(-5,0), [ax1, ay1] = toPx(5,0);
+  ctx.beginPath(); ctx.moveTo(ax0,ay0); ctx.lineTo(ax1,ay1); ctx.stroke();
+  [ax0, ay0] = toPx(0,-1.3); [ax1, ay1] = toPx(0,1.3);
+  ctx.beginPath(); ctx.moveTo(ax0,ay0); ctx.lineTo(ax1,ay1); ctx.stroke();
+
+  // kurva
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for(let px=0; px<=W; px++){
+    const xv = -5 + (px-40)/(W-60) * 10;
+    const yv = f(kind, xv);
+    const [X, Y] = toPx(xv, yv);
+    if(px===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+  }
+  ctx.stroke();
+
+  // titik + gradient
+  const yv = f(kind, x);
+  const [px, py] = toPx(x, yv);
+  const g = df(kind, x);
+  ctx.fillStyle = g > 0.5 ? '#059669' : (g > 0.1 ? '#b45309' : '#dc2626');
+  ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI*2); ctx.fill();
+
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  const slope = kind==='relu' ? (x>0?1:0) : g;
+  ctx.lineTo(px + 40, py - slope*40);
+  ctx.stroke();
+
+  // readout
+  document.getElementById('xVal').textContent = x.toFixed(2);
+  document.getElementById('fx').textContent  = yv.toFixed(3);
+  document.getElementById('dfx').textContent = g.toFixed(3);
+
+  const tag = document.getElementById('tag');
+  const expl = document.getElementById('explain');
+  if(g < 0.05){
+    tag.className = 'grad-tag tag-dead';
+    tag.textContent = 'gradient mati';
+    expl.textContent = 'Gradient hampir 0. Saat backpropagation, error tidak bisa mengalir ke layer sebelumnya. Inilah vanishing gradient.';
+  } else if(g < 0.5){
+    tag.className = 'grad-tag tag-mid';
+    tag.textContent = 'gradient menipis';
+    expl.textContent = 'Gradient < 0.5. Error masih mengalir, tapi melemah setiap layer. Training jadi lambat.';
+  } else {
+    tag.className = 'grad-tag tag-alive';
+    tag.textContent = 'gradient hidup';
+    expl.textContent = 'Gradient besar (mendekati 1). Error mengalir utuh saat backpropagation. Hidden layer belajar cepat.';
+  }
+}
+
+document.getElementById('xSlider').addEventListener('input', draw);
+document.getElementById('actType').addEventListener('change', () => {
+  const kind = document.getElementById('actType').value;
+  document.getElementById('explain').textContent = ({
+    sigmoid: 'Sigmoid: output 0-1, gradient maksimum hanya 0.25. Bagus untuk output biner, kurang cocok untuk hidden layer yang dalam.',
+    tanh:    'Tanh: output -1..1, gradient maksimum 1 tapi menipis cepat. Lebih baik dari Sigmoid, tetap kalah dari ReLU untuk hidden.',
+    relu:    'ReLU: output 0 untuk x<0, x untuk x>0. Gradient = 1 untuk x>0. Pilihan default untuk hidden layer.'
+  })[kind];
+  draw();
+});
+
+draw();
+</script>
+</body>
+</html>

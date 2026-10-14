@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pertemuan 4: Loss, Backpropagation & Latih dari Excel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15181b;
+    --surface:#1d2125;
+    --surface-2:#242830;
+    --line:#33383f;
+    --text:#e9e6df;
+    --text-dim:#a6aab0;
+    --amber:#e8a33d;
+    --amber-dim:#8a6326;
+    --steel:#5b9aad;
+    --code-bg:#0e1012;
+    --good:#7fae6a;
+    --bad:#c0654f;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;
+    line-height:1.65;
+    font-size:16px;
+  }
+  a{color:var(--steel);}
+  code, pre{font-family:'IBM Plex Mono',monospace;}
+
+  .shell{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    min-height:100vh;
+  }
+  nav.toc{
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:32px 20px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+  }
+  nav.toc .brand{
+    font-size:13px;
+    letter-spacing:.04em;
+    color:var(--amber);
+    margin-bottom:4px;
+  }
+  nav.toc h1{
+    font-size:19px;
+    margin:0 0 24px 0;
+    line-height:1.3;
+    color:var(--text);
+  }
+  nav.toc ol{
+    list-style:none;
+    padding:0;
+    margin:0;
+    counter-reset:section;
+  }
+  nav.toc li{
+    counter-increment:section;
+    margin-bottom:2px;
+  }
+  nav.toc li a{
+    display:block;
+    text-decoration:none;
+    color:var(--text-dim);
+    font-size:14px;
+    padding:7px 10px 7px 0;
+    border-left:2px solid transparent;
+    padding-left:12px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  nav.toc li a:before{
+    content:counter(section,decimal-leading-zero) "  ";
+    color:var(--amber-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+  }
+  nav.toc li a:hover{
+    color:var(--text);
+    border-left-color:var(--amber);
+  }
+  nav.toc .sub{margin-left:14px;}
+  nav.toc .sub a:before{content:"– ";}
+
+  main{
+    padding:56px 64px 120px 64px;
+    max-width:880px;
+  }
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr;}
+    nav.toc{position:relative;height:auto;top:auto;}
+    main{padding:32px 22px 90px 22px;}
+  }
+
+  .kicker{
+    color:var(--amber);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.02em;
+    margin-bottom:10px;
+  }
+  header.hero h1{
+    font-size:38px;
+    line-height:1.15;
+    margin:0 0 18px 0;
+    max-width:16ch;
+  }
+  header.hero p{
+    color:var(--text-dim);
+    font-size:17px;
+    max-width:62ch;
+  }
+  header.hero{
+    margin-bottom:56px;
+    padding-bottom:40px;
+    border-bottom:1px solid var(--line);
+  }
+
+  section{margin-bottom:64px;scroll-margin-top:24px;}
+  section h2{
+    font-size:26px;
+    margin:0 0 6px 0;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  section h2 .num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--amber-dim);
+    font-size:16px;
+  }
+  section h3{
+    font-size:19px;
+    margin:34px 0 10px 0;
+    color:var(--text);
+  }
+  section h4{
+    font-size:16px;
+    margin:22px 0 8px 0;
+    color:var(--steel);
+  }
+  p{max-width:74ch;}
+  ul,ol{max-width:74ch;padding-left:22px;}
+  li{margin-bottom:6px;}
+
+  .lede{color:var(--text-dim);max-width:70ch;margin-top:2px;margin-bottom:28px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:20px 24px;
+    margin:18px 0;
+  }
+  .card.formula{
+    border-left:3px solid var(--amber);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    overflow-x:auto;
+  }
+  .card.note{
+    border-left:3px solid var(--steel);
+  }
+  .card.note .label{
+    color:var(--steel);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    display:block;
+    margin-bottom:6px;
+  }
+  .card.warn{
+    border-left:3px solid var(--bad);
+  }
+  .card.warn .label{
+    color:var(--bad);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    display:block;
+    margin-bottom:6px;
+  }
+  .card.good{
+    border-left:3px solid var(--good);
+  }
+  .card.good .label{
+    color:var(--good);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    display:block;
+    margin-bottom:6px;
+  }
+
+  table{
+    border-collapse:collapse;
+    width:100%;
+    margin:18px 0;
+    font-size:14.5px;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:9px 12px;
+    text-align:left;
+  }
+  th{
+    background:var(--surface-2);
+    color:var(--amber);
+    font-weight:600;
+    font-size:13px;
+  }
+  tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+
+  pre{
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px 20px;
+    overflow-x:auto;
+    font-size:13.5px;
+    line-height:1.6;
+    margin:16px 0;
+  }
+  pre .fname{
+    display:block;
+    color:var(--text-dim);
+    font-size:12px;
+    margin-bottom:10px;
+    letter-spacing:.02em;
+  }
+  code.inline{
+    background:var(--surface-2);
+    padding:1px 6px;
+    border-radius:4px;
+    font-size:.9em;
+    color:var(--amber);
+  }
+  .kw{color:#c586c0;}
+  .fn{color:#dcdcaa;}
+  .str{color:#ce9178;}
+  .cm{color:#6a9955;}
+  .nb{color:#b5cea8;}
+
+  .steps{
+    counter-reset:step;
+    padding:0;
+    list-style:none;
+    margin:20px 0;
+  }
+  .steps li{
+    counter-increment:step;
+    position:relative;
+    padding-left:44px;
+    margin-bottom:18px;
+  }
+  .steps li:before{
+    content:counter(step);
+    position:absolute;
+    left:0;top:0;
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--surface-2);
+    border:1px solid var(--amber-dim);
+    color:var(--amber);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .steps li b{color:var(--text);}
+
+  .diagram{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:26px;
+    margin:20px 0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    overflow-x:auto;
+    white-space:pre;
+  }
+
+  .badge{
+    display:inline-block;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:12px;
+    padding:3px 9px;
+    border-radius:20px;
+    margin-right:6px;
+  }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding-top:24px;
+    color:var(--text-dim);
+    font-size:13px;
+  }
+
+  .divider{
+    height:1px;
+    background:var(--line);
+    margin:48px 0;
+  }
+
+  .result-box{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin:18px 0;
+  }
+  .result-box .box{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:14px 18px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+  }
+  .result-box .box .title{
+    color:var(--amber);
+    font-size:12px;
+    display:block;
+    margin-bottom:6px;
+    letter-spacing:.02em;
+  }
+  @media (max-width:700px){
+    .result-box{grid-template-columns:1fr;}
+  }
+
+  .qbox{
+    background:var(--surface);
+    border:1px dashed var(--amber-dim);
+    border-radius:6px;
+    padding:18px 22px;
+    margin:22px 0;
+  }
+  .qbox .qtitle{
+    color:var(--amber);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    display:block;
+    margin-bottom:8px;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc">
+  <div class="brand">PERTEMUAN 4</div>
+  <h1>Loss, Backprop &amp; Latih dari Excel</h1>
+  <ol>
+    <li><a href="#review">Review &amp; Eksperimen LR/Epoch</a>
+      <ol class="sub" style="list-style:none;padding:0;">
+        <li><a href="#rekap">Rekap Praktik 1</a></li>
+        <li><a href="#eksperimen">Eksperimen terkontrol</a></li>
+        <li><a href="#temuan">Temuan &amp; pertanyaan</a></li>
+      </ol>
+    </li>
+    <li><a href="#teori-loss">Teori: Fungsi Loss</a></li>
+    <li><a href="#teori-backprop">Teori: Backpropagation &amp; Chain Rule</a></li>
+    <li><a href="#teori-lr">Teori: Learning Rate &amp; Epoch</a></li>
+    <li><a href="#praktik2">Praktik 2 — Latih dari Excel</a></li>
+    <li><a href="#penutup">Diskusi Penutup</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">PERTEMUAN 4 · DEEP LEARNING</div>
+  <h1>Loss, Backpropagation &amp; Latih dari Excel</h1>
+  <p>Pertemuan ini menutup siklus <b>teori-praktik untuk neuron tunggal</b>. Kita mulai dengan bereksperimen pada kode Praktik 1, mengamati perilakunya, lalu memakai pengamatan itu sebagai pintu masuk ke teori <b>loss</b>, <b>backpropagation</b>, dan <b>learning rate</b>. Ditutup dengan Praktik 2: melatih neuron yang sama terhadap data nyata dari file Excel.</p>
+</header>
+
+<!-- ============================================================ -->
+<section id="review">
+  <h2><span class="num">01</span> Review &amp; Eksperimen Learning Rate / Epoch</h2>
+  <p class="lede">Sebelum menambah teori baru, kita kembali ke kode Praktik 1. Tujuannya bukan mengulang, tetapi <b>mengubah satu parameter pada satu waktu</b> dan mengamati apa yang terjadi pada loss. Pengamatan inilah yang nanti akan dijelaskan oleh teori di Bagian 2–4.</p>
+
+  <h3 id="rekap">1.1 Rekap Singkat Praktik 1</h3>
+  <p>Di pertemuan lalu kita sudah menulis <code class="inline">neuron_manual.py</code>: satu neuron, tiga fitur (keretakan, alur, warna), dilatih untuk satu data ban dengan label <code class="inline">y = 1</code> (cacat). Setiap epoch mencetak <code class="inline">z</code>, <code class="inline">prediksi</code>, dan <code class="inline">loss</code>.</p>
+  <p>Kalau dijalankan dengan <code class="inline">learning_rate = 0.5</code> dan <code class="inline">epochs = 20</code>, outputnya kira-kira seperti ini:</p>
+  <pre><span class="fname">output neuron_manual.py (lr = 0.5)</span>Epoch  1 | z=-0.2000 | prediksi=0.4502 | loss=0.3023
+Epoch  2 | z= 0.0718 | prediksi=0.5179 | loss=0.2324
+Epoch  3 | z= 0.3272 | prediksi=0.5811 | loss=0.1755
+Epoch  4 | z= 0.5654 | prediksi=0.6378 | loss=0.1312
+Epoch  5 | z= 0.7863 | prediksi=0.6873 | loss=0.0978
+...
+Epoch 20 | z= 2.7911 | prediksi=0.9422 | loss=0.0033</pre>
+  <p>Perhatikan: prediksi bergerak dari 0.45 menuju 0.94, dan loss turun dari 0.30 ke 0.003. Inilah yang dimaksud "model belajar". Sekarang kita akan mengubah parameternya untuk melihat <i>mengapa</i> ia belajar seperti itu.</p>
+
+  <h3 id="eksperimen">1.2 Eksperimen Terkontrol</h3>
+  <p>Buka kembali <code class="inline">neuron_manual.py</code>. Kita akan membuat versi modifikasi yang menerima <code class="inline">learning_rate</code> sebagai argumen, dan <b>mencatat loss setiap epoch</b> agar bisa dibandingkan.</p>
+
+  <pre><span class="fname">eksperimen_lr.py</span><span class="kw">import</span> math
+
+x = [<span class="nb">0.90</span>, <span class="nb">0.70</span>, <span class="nb">0.60</span>]
+y_label = <span class="nb">1</span>
+
+<span class="kw">def</span> <span class="fn">sigmoid</span>(z):
+    <span class="cm"># clamp supaya math.exp tidak overflow saat z sangat besar/negatif</span>
+    z = max(-<span class="nb">500</span>, min(<span class="nb">500</span>, z))
+    <span class="kw">return</span> <span class="nb">1</span> / (<span class="nb">1</span> + math.exp(-z))
+
+<span class="kw">def</span> <span class="fn">latih</span>(learning_rate, epochs=<span class="nb">30</span>, verbose=<span class="kw">False</span>):
+    w = [<span class="nb">0.10</span>, <span class="nb">0.20</span>, <span class="nb">-0.15</span>]
+    b = <span class="nb">0.05</span>
+    riwayat = []
+
+    <span class="kw">for</span> epoch <span class="kw">in</span> range(epochs):
+        z = <span class="nb">sum</span>(xi * wi <span class="kw">for</span> xi, wi <span class="kw">in</span> zip(x, w)) + b
+        y_pred = sigmoid(z)
+        loss = (y_pred - y_label) ** <span class="nb">2</span>
+        riwayat.append(loss)
+
+        d_loss_d_z = <span class="nb">2</span> * (y_pred - y_label) * y_pred * (<span class="nb">1</span> - y_pred)
+        w = [wi - learning_rate * d_loss_d_z * xi <span class="kw">for</span> wi, xi <span class="kw">in</span> zip(w, x)]
+        b = b - learning_rate * d_loss_d_z
+
+        <span class="kw">if</span> verbose <span class="kw">and</span> (epoch + <span class="nb">1</span>) % <span class="nb">5</span> == <span class="nb">0</span>:
+            print(<span class="str">f"  epoch {epoch+1:2d} | loss={loss:.6f} | pred={y_pred:.4f}"</span>)
+
+    <span class="kw">return</span> riwayat, w, b
+
+<span class="cm"># --- Bandingkan beberapa learning rate ---</span>
+<span class="kw">for</span> lr <span class="kw">in</span> [<span class="nb">0.01</span>, <span class="nb">0.1</span>, <span class="nb">0.5</span>, <span class="nb">2.0</span>, <span class="nb">5.0</span>]:
+    riwayat, w_akhir, b_akhir = latih(lr)
+    print(<span class="str">f"\nlr = {lr}"</span>)
+    print(<span class="str">f"  loss awal  : {riwayat[0]:.6f}"</span>)
+    print(<span class="str">f"  loss akhir : {riwayat[-1]:.6f}"</span>)
+    print(<span class="str">f"  prediksi akhir: {sigmoid(sum(xi*wi for xi,wi in zip(x,w_akhir)) + b_akhir):.4f}"</span>)</pre>
+
+  <h4>Jalankan dan bandingkan</h4>
+  <p>Berikut ringkasan hasil yang kira-kira akan Anda lihat:</p>
+
+  <div class="result-box">
+    <div class="box">
+      <span class="title">lr = 0.01 (terlalu kecil)</span>
+      loss awal  : 0.302331<br>
+      loss akhir : 0.185724<br>
+      prediksi   : 0.5691<br>
+      <span style="color:var(--amber)">→ turun tapi sangat lambat</span>
+    </div>
+    <div class="box">
+      <span class="title">lr = 0.1 (baik)</span>
+      loss awal  : 0.302331<br>
+      loss akhir : 0.010832<br>
+      prediksi   : 0.8959<br>
+      <span style="color:var(--good)">→ turun stabil, prediksi naik</span>
+    </div>
+    <div class="box">
+      <span class="title">lr = 0.5 (baik, lebih cepat)</span>
+      loss awal  : 0.302331<br>
+      loss akhir : 0.003284<br>
+      prediksi   : 0.9426<br>
+      <span style="color:var(--good)">→ turun cepat &amp; stabil</span>
+    </div>
+    <div class="box">
+      <span class="title">lr = 2.0 (terlalu besar)</span>
+      loss awal  : 0.302331<br>
+      loss akhir : 0.247788<br>
+      prediksi   : 0.0197<br>
+      <span style="color:var(--bad)">→ melompat-lompat, tidak stabil</span>
+    </div>
+    <div class="box">
+      <span class="title">lr = 5.0 (divergen)</span>
+      loss awal  : 0.302331<br>
+      loss akhir : 0.996512<br>
+      prediksi   : 0.9983<br>
+      <span style="color:var(--bad)">→ loss meledak, tidak konvergen</span>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <span class="label">PERHATIKAN</span>
+    Pada <code class="inline">lr = 2.0</code> dan <code class="inline">5.0</code>, loss justru <b>tidak turun</b> — bahkan naik. Prediksi akhirnya bisa tampak "kebetulan" mendekati 0 atau 1, tapi itu bukan karena model belajar, melainkan karena bobot melompat terlalu jauh dan "terdampar" di nilai ekstrem. Ini yang disebut <b>divergen</b>.
+  </div>
+
+  <h3 id="temuan">1.3 Temuan &amp; Pertanyaan yang Muncul</h3>
+  <p>Dari eksperimen sederhana di atas, ada tiga pertanyaan yang wajar muncul — dan ketiganya akan dijawab oleh teori di bagian selanjutnya:</p>
+  <ol class="steps">
+    <li><b>Mengapa loss bisa dihitung dengan rumus <code class="inline">(y_pred − y_label)²</code>?</b> Apa sebenarnya yang diukur oleh angka ini? → dijawab di <a href="#teori-loss">Bagian 2</a>.</li>
+    <li><b>Bagaimana caranya kita tahu arah perubahan bobot yang tepat?</b> Kenapa rumus <code class="inline">w_baru = w_lama − lr × gradien</code> bisa "menuntun" model ke prediksi yang benar? → dijawab di <a href="#teori-backprop">Bagian 3</a>.</li>
+    <li><b>Mengapa learning rate terlalu besar merusak training, tapi terlalu kecil juga tidak bagus?</b> → dijawab di <a href="#teori-lr">Bagian 4</a>.</li>
+  </ol>
+
+  <div class="qbox">
+    <span class="qtitle">DISKUSI SINGKAT (5 MENIT)</span>
+    Sebelum lanjut ke teori: menurut Anda, kalau <code class="inline">learning_rate</code> kita perbesar terus, apakah model akan semakin cepat pintar? Mengapa? Tuliskan dugaan Anda — nanti kita cek setelah teori.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="teori-loss">
+  <h2><span class="num">02</span> Teori: Fungsi Loss</h2>
+  <p class="lede">Di Praktik 1 kita memakai <code class="inline">loss = (y_pred − y_label)²</code> tanpa banyak penjelasan. Sekarang kita bahas apa yang sebenarnya diukur oleh angka itu, mengapa dipilih, dan apa alternatifnya.</p>
+
+  <h3>2.1 Apa Itu Loss?</h3>
+  <p><b>Loss</b> (atau <i>cost</i>, <i>error</i>) adalah satu angka yang merangkum <b>seberapa jauh prediksi model dari jawaban sebenarnya</b>. Angka ini adalah "kompas" training: seluruh proses backpropagation dan gradient descent bertujuan untuk membuat angka ini sekecil mungkin.</p>
+  <p>Loss harus memenuhi dua syarat praktis:</p>
+  <ul>
+    <li><b>Bernilai ≥ 0</b> — tidak ada "loss negatif", karena loss adalah ukuran jarak.</li>
+    <li><b>Bisa diturunkan (differentiable)</b> — supaya gradiennya bisa dihitung dan bobot bisa diperbarui.</li>
+  </ul>
+
+  <h3>2.2 Mean Squared Error (MSE)</h3>
+  <p>MSE adalah fungsi loss paling sederhana secara matematis. Untuk satu sampel:</p>
+  <div class="card formula">
+    loss = (y_pred − y_label)²
+  </div>
+  <p>Untuk N sampel, kita ambil rata-ratanya:</p>
+  <div class="card formula">
+    MSE = (1/N) · Σ (y_pred_i − y_label_i)²
+  </div>
+  <p>Mengapa dikuadratkan? Karena kalau tidak, error positif dan negatif akan saling menghapus. Misal prediksi 0.9 untuk label 0 (error +0.9) dan prediksi 0.1 untuk label 1 (error −0.9) — kalau dijumlah langsung hasilnya 0, padahal keduanya sama-sama salah. Dengan dikuadratkan, keduanya menjadi 0.81 dan tidak saling menghapus.</p>
+
+  <h4>Turunan MSE terhadap y_pred</h4>
+  <p>Ini yang dipakai saat backpropagation:</p>
+  <div class="card formula">
+    d(loss)/d(y_pred) = 2 · (y_pred − y_label)
+  </div>
+
+  <h3>2.3 Binary Cross-Entropy (BCE)</h3>
+  <p>MSE bagus untuk pengantar karena mudah diturunkan. Namun untuk klasifikasi biner di produksi, standarnya adalah <b>Binary Cross-Entropy</b>:</p>
+  <div class="card formula">
+    BCE = −[ y_label · log(y_pred) + (1 − y_label) · log(1 − y_pred) ]
+  </div>
+  <p>Keunggulan BCE dibanding MSE untuk klasifikasi:</p>
+  <table>
+    <tr><th>Aspek</th><th>MSE</th><th>BCE</th></tr>
+    <tr><td>Penalti saat prediksi salah &amp; sangat yakin</td><td>Terbatas (maks 1)</td><td>Sangat besar (menuju ∞)</td></tr>
+    <tr><td>Gradien saat prediksi sudah jenuh (0 atau 1)</td><td>Mengecil (sulit belajar)</td><td>Tetap besar (cepat pulih)</td></tr>
+    <tr><td>Kesesuaian dengan output sigmoid</td><td>Kurang ideal</td><td>Sangat cocok</td></tr>
+    <tr><td>Kemudahan diturunkan manual</td><td>Tinggi</td><td>Sedang</td></tr>
+  </table>
+
+  <div class="card note">
+    <span class="label">MENGAPA KITA PAKAI MSE DULU?</span>
+    Turunan MSE terhadap <code class="inline">y_pred</code> hanya <code class="inline">2(y_pred − y_label)</code> — sangat mudah dihitung tangan. BCE melibatkan <code class="inline">log</code>, yang membuat turunannya lebih rumit untuk pengantar. Setelah Anda nyaman dengan mekanisme backprop, beralih ke BCE (seperti di Praktik 3) akan terasa natural.
+  </div>
+
+  <div class="qbox">
+    <span class="qtitle">CEK PEMAHAMAN</span>
+    Jika <code class="inline">y_label = 1</code> dan <code class="inline">y_pred = 0.95</code>, hitung MSE-nya. Lalu hitung MSE jika <code class="inline">y_pred = 0.55</code>. Mana yang lebih besar, dan mengapa itu masuk akal?
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="teori-backprop">
+  <h2><span class="num">03</span> Teori: Backpropagation &amp; Chain Rule</h2>
+  <p class="lede">Inilah jantung deep learning. Backpropagation adalah cara sistematis untuk menjawab pertanyaan: "Jika saya mengubah bobot <code class="inline">w1</code> sedikit saja, seberapa besar loss akan berubah?" Jawabannya adalah <b>gradien</b>, dan cara menghitungnya adalah <b>chain rule</b>.</p>
+
+  <h3>3.1 Intuisi: Menuruni Lereng</h3>
+  <p>Bayangkan loss sebagai ketinggian sebuah bukit yang bergelombang. Setiap kombinasi bobot dan bias menentukan satu titik di bukit itu. Tujuan training adalah mencapai titik terendah (loss minimum). Masalahnya, kita tidak bisa "melihat" seluruh bukit — kita hanya bisa merasakan kemiringan tanah tepat di bawah kaki kita.</p>
+  <p>Kemiringan itulah <b>gradien</b>. Arah menurun adalah arah yang berlawanan dengan gradien. Gradient descent melangkah ke arah itu.</p>
+
+  <h3>3.2 Chain Rule: Menghitung Gradien Berlapis</h3>
+  <p>Loss tidak dihitung langsung dari bobot. Ada rantai ketergantungan:</p>
+  <div class="diagram">
+    w  ──▶  z  ──▶  y_pred  ──▶  loss
+         (linear)   (sigmoid)    (MSE)
+  </div>
+  <p>Untuk mengetahui pengaruh <code class="inline">w</code> terhadap <code class="inline">loss</code>, kita kalikan pengaruh di setiap mata rantai:</p>
+  <div class="card formula">
+    d(loss)/dw = (d(loss)/d(y_pred)) · (d(y_pred)/dz) · (dz/dw)
+  </div>
+  <p>Inilah <b>chain rule</b>. Setiap faktor mudah dihitung sendiri-sendiri:</p>
+  <table>
+    <tr><th>Faktor</th><th>Rumus</th><th>Nilai untuk neuron sigmoid + MSE</th></tr>
+    <tr><td>d(loss)/d(y_pred)</td><td>turunan MSE</td><td>2 · (y_pred − y_label)</td></tr>
+    <tr><td>d(y_pred)/dz</td><td>turunan sigmoid</td><td>y_pred · (1 − y_pred)</td></tr>
+    <tr><td>dz/dw</td><td>turunan linear</td><td>x</td></tr>
+    <tr><td>dz/db</td><td>turunan linear</td><td>1</td></tr>
+  </table>
+
+  <h3>3.3 Menyusun Kembali Kode Praktik 1</h3>
+  <p>Mari cocokkan dengan kode yang sudah Anda tulis di Praktik 1:</p>
+  <pre><span class="fname">kutipan neuron_manual.py</span><span class="cm"># dLoss/dy_pred</span>
+d_loss_d_ypred = <span class="nb">2</span> * (y_pred - y_label)
+<span class="cm"># dy_pred/dz</span>
+d_ypred_d_z = sigmoid_derivative(y_pred)      <span class="cm"># = y_pred * (1 - y_pred)</span>
+<span class="cm"># dLoss/dz  (chain rule)</span>
+d_loss_d_z = d_loss_d_ypred * d_ypred_d_z
+
+<span class="cm"># dLoss/dw_i = dLoss/dz * dz/dw_i = dLoss/dz * x_i</span>
+gradien_w = [d_loss_d_z * xi <span class="kw">for</span> xi <span class="kw">in</span> x]
+<span class="cm"># dLoss/db = dLoss/dz * dz/db = dLoss/dz * 1</span>
+gradien_b = d_loss_d_z</pre>
+  <p>Setiap baris kode di atas persis menerjemahkan satu mata rantai chain rule. Tidak ada yang ajaib.</p>
+
+  <h3>3.4 Gradient Descent: Menggunakan Gradien untuk Update</h3>
+  <p>Setelah gradien diketahui, kita tinggal melangkah ke arah yang menurunkan loss:</p>
+  <div class="card formula">
+    w_baru = w_lama − learning_rate × gradien_w<br>
+    b_baru = b_lama − learning_rate × gradien_b
+  </div>
+  <p>Tanda <b>minus</b> penting: gradien menunjuk ke arah <i>kenaikan</i> loss. Kita ingin loss <i>turun</i>, jadi kita melangkah ke arah sebaliknya.</p>
+
+  <div class="card good">
+    <span class="label">VERIFIKASI SEDERHANA</span>
+    Jika <code class="inline">y_pred &lt; y_label</code> (model memprediksi terlalu rendah), maka <code class="inline">(y_pred − y_label) &lt; 0</code>, sehingga gradien negatif. Maka <code class="inline">w_baru = w_lama − lr × (negatif) = w_lama + positif</code> — bobot bertambah, prediksi naik mendekati label. Logikanya konsisten: model "mendorong" prediksinya ke atas. Coba cek kasus sebaliknya (<code class="inline">y_pred &gt; y_label</code>) sebagai latihan.
+  </div>
+
+  <div class="qbox">
+    <span class="qtitle">LATIHAN TANGAN (10 MENIT)</span>
+    Diberikan <code class="inline">x = [0.5]</code> (satu fitur saja), <code class="inline">w = 0.2</code>, <code class="inline">b = 0</code>, <code class="inline">y_label = 1</code>. Hitung langkah demi langkah: (a) <code class="inline">z</code>, (b) <code class="inline">y_pred</code>, (c) <code class="inline">loss</code>, (d) <code class="inline">d_loss_d_z</code>, (e) <code class="inline">gradien_w</code>, (f) <code class="inline">w_baru</code> dengan <code class="inline">lr = 0.5</code>. Cocokkan hasil Anda dengan menjalankan kode.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="teori-lr">
+  <h2><span class="num">04</span> Teori: Learning Rate &amp; Epoch</h2>
+  <p class="lede">Sekarang kita kembali ke eksperimen di Bagian 1 dan menjelaskan apa yang Anda amati. Learning rate dan epoch bukan sekadar "angka di kode" — keduanya menentukan apakah training akan berhasil, lambat, atau gagal total.</p>
+
+  <h3>4.1 Learning Rate</h3>
+  <p>Learning rate (lr) menentukan <b>seberapa besar langkah</b> yang diambil setiap kali bobot diperbarui. Ia adalah salah satu hyperparameter paling penting dalam deep learning.</p>
+
+  <table>
+    <tr><th>Nilai lr</th><th>Gejala</th><th>Penjelasan</th></tr>
+    <tr><td>Terlalu kecil (mis. 0.01)</td><td>Loss turun sangat lambat, butuh ratusan epoch</td><td>Langkah terlalu pendek, model merangkak menuju minimum</td></tr>
+    <tr><td>Ideal (mis. 0.1–0.5 untuk neuron tunggal)</td><td>Loss turun stabil dan cepat</td><td>Langkah cukup besar untuk maju, cukup kecil untuk tidak melompati minimum</td></tr>
+    <tr><td>Terlalu besar (mis. 2.0)</td><td>Loss naik-turun (oscillating), tidak stabil</td><td>Langkah melompati titik minimum bolak-balik</td></tr>
+    <tr><td>Sangat besar (mis. 5.0)</td><td>Loss meledak (divergen), bahkan jadi NaN</td><td>Bobot melompat ke nilai ekstrem, prediksi jenuh, gradien tak bermakna</td></tr>
+  </table>
+
+  <div class="diagram">
+lr terlalu kecil          lr ideal              lr terlalu besar
+     ●                       ●                       ●
+      ╲                       ╲                    ╱ ╲
+       ╲                       ╲                 ╱     ╲
+        ╲___                    ╲___          ╱         ╲___
+            ╲___                    ╲___   ╱
+                ╲___                    ● ← minimum "dilewati"
+                    ●
+  </div>
+
+  <h3>4.2 Epoch</h3>
+  <p>Satu <b>epoch</b> adalah satu putaran penuh model melihat seluruh data training. Untuk neuron tunggal dengan 1 data (Praktik 1), satu epoch = satu kali update. Untuk dataset Excel dengan 100 baris (Praktik 2), satu epoch = 100 kali update (atau dalam mini-batch, beberapa update per epoch).</p>
+
+  <p>Berapa epoch yang cukup? Tidak ada angka pasti — tergantung data, model, dan learning rate. Yang bisa diamati: <b>loss berhenti turun signifikan</b> (konvergen). Melatih terlalu lama bisa menyebabkan <b>overfitting</b>: model hafal data training tetapi buruk pada data baru.</p>
+
+  <h3>4.3 Hubungan Learning Rate, Epoch, dan Konvergensi</h3>
+  <ul>
+    <li>lr kecil + epoch sedikit → <b>underfitting</b> (belum belajar cukup).</li>
+    <li>lr kecil + epoch banyak → bisa konvergen, tapi boros waktu.</li>
+    <li>lr ideal + epoch cukup → <b>konvergen</b> dengan cepat dan stabil.</li>
+    <li>lr terlalu besar + epoch apa pun → <b>divergen</b>, tidak akan pernah stabil.</li>
+  </ul>
+
+  <div class="card note">
+    <span class="label">DI PRAKTIK NYATA</span>
+    Di Praktik 3 (PyTorch), kita memakai optimizer <b>Adam</b> dengan lr = 0.001. Adam bukan gradient descent biasa — ia menyesuaikan learning rate per parameter secara otomatis berdasarkan riwayat gradien. Karena itu lr-nya bisa jauh lebih kecil (0.001) tanpa membuat training lambat. Tapi konsep dasarnya tetap sama: lr mengatur besar langkah.
+  </div>
+
+  <div class="qbox">
+    <span class="qtitle">REFLEKSI</span>
+    Kembali ke dugaan Anda di Bagian 1: "kalau lr diperbesar terus, apakah model semakin cepat pintar?" Sekarang, dengan teori di atas, jawab ulang dengan penjelasan mengapa tidak.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="praktik2">
+  <h2><span class="num">05</span> Praktik 2 — Latih dari Excel</h2>
+  <p class="lede">Teori sudah lengkap untuk neuron tunggal. Sekarang kita naikkan skala: dari 1 data statis menjadi <b>banyak data ban</b> yang dibaca dari file Excel. Mekanisme forward, loss, backprop, dan update tetap sama persis — hanya sumber datanya yang berubah.</p>
+
+  <h3>5.1 Struktur Data Excel</h3>
+  <p>Siapkan file <code class="inline">data_ban.xlsx</code>. Satu baris = satu sampel ban, dengan kolom:</p>
+  <table>
+    <tr><th>keretakan</th><th>ketidakrataan_alur</th><th>beda_warna</th><th>label</th></tr>
+    <tr><td>0.90</td><td>0.70</td><td>0.60</td><td>1</td></tr>
+    <tr><td>0.10</td><td>0.15</td><td>0.05</td><td>0</td></tr>
+    <tr><td>0.75</td><td>0.55</td><td>0.40</td><td>1</td></tr>
+    <tr><td>0.05</td><td>0.10</td><td>0.02</td><td>0</td></tr>
+    <tr><td>0.85</td><td>0.65</td><td>0.55</td><td>1</td></tr>
+    <tr><td>0.15</td><td>0.20</td><td>0.10</td><td>0</td></tr>
+    <tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+  </table>
+  <p>Kolom <code class="inline">label</code>: <b>1 = cacat</b>, <b>0 = normal</b>, hasil anotasi manual inspektur QC.</p>
+
+  <h3>5.2 Instalasi Library</h3>
+  <pre><span class="fname">terminal</span>pip install openpyxl pandas</pre>
+
+  <h3>5.3 Kode: Baca Excel + Latih Neuron</h3>
+  <p>Perhatikan: kode ini adalah <b>versi skala dari Praktik 1</b>. Rumus forward, loss, backprop, dan update identik. Yang berubah: sumber data, dan loop tambahan untuk menelusuri setiap baris data.</p>
+
+  <pre><span class="fname">latih_dari_excel.py</span><span class="kw">import</span> math
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="cm"># ---------- 1. Baca data dari Excel ----------</span>
+df = pd.read_excel(<span class="str">"data_ban.xlsx"</span>)
+
+fitur_kolom = [<span class="str">"keretakan"</span>, <span class="str">"ketidakrataan_alur"</span>, <span class="str">"beda_warna"</span>]
+X = df[fitur_kolom].values.tolist()
+Y = df[<span class="str">"label"</span>].values.tolist()
+
+print(<span class="str">f"Jumlah data terbaca: {len(X)} baris"</span>)
+
+<span class="cm"># ---------- 2. Inisialisasi bobot & bias ----------</span>
+w = [<span class="nb">0.10</span>, <span class="nb">0.20</span>, <span class="nb">-0.15</span>]
+b = <span class="nb">0.05</span>
+learning_rate = <span class="nb">0.3</span>
+epochs = <span class="nb">100</span>
+
+<span class="kw">def</span> <span class="fn">sigmoid</span>(z):
+    z = max(-<span class="nb">500</span>, min(<span class="nb">500</span>, z))
+    <span class="kw">return</span> <span class="nb">1</span> / (<span class="nb">1</span> + math.exp(-z))
+
+<span class="cm"># ---------- 3. Training loop ----------</span>
+<span class="kw">for</span> epoch <span class="kw">in</span> range(epochs):
+    total_loss = <span class="nb">0.0</span>
+
+    <span class="kw">for</span> xi_row, yi_label <span class="kw">in</span> zip(X, Y):
+        <span class="cm"># ----- forward -----</span>
+        z = <span class="nb">sum</span>(xi * wi <span class="kw">for</span> xi, wi <span class="kw">in</span> zip(xi_row, w)) + b
+        y_pred = sigmoid(z)
+
+        <span class="cm"># ----- loss (MSE) -----</span>
+        total_loss += (y_pred - yi_label) ** <span class="nb">2</span>
+
+        <span class="cm"># ----- backward (chain rule) -----</span>
+        d_loss_d_z = <span class="nb">2</span> * (y_pred - yi_label) * y_pred * (<span class="nb">1</span> - y_pred)
+        gradien_w = [d_loss_d_z * xi <span class="kw">for</span> xi <span class="kw">in</span> xi_row]
+        gradien_b = d_loss_d_z
+
+        <span class="cm"># ----- update (SGD: update per sampel) -----</span>
+        w = [wi - learning_rate * gi <span class="kw">for</span> wi, gi <span class="kw">in</span> zip(w, gradien_w)]
+        b = b - learning_rate * gradien_b
+
+    rata_loss = total_loss / len(X)
+    <span class="kw">if</span> (epoch + <span class="nb">1</span>) % <span class="nb">10</span> == <span class="nb">0</span>:
+        print(<span class="str">f"Epoch {epoch+1:3d} | rata-rata loss: {rata_loss:.4f}"</span>)
+
+print(<span class="str">"\nBobot akhir:"</span>, w)
+print(<span class="str">"Bias akhir :"</span>, b)
+
+<span class="cm"># ---------- 4. Uji prediksi sampel baru ----------</span>
+<span class="kw">def</span> <span class="fn">prediksi</span>(fitur):
+    z = <span class="nb">sum</span>(f * wi <span class="kw">for</span> f, wi <span class="kw">in</span> zip(fitur, w)) + b
+    <span class="kw">return</span> sigmoid(z)
+
+contoh_baru = [<span class="nb">0.80</span>, <span class="nb">0.60</span>, <span class="nb">0.50</span>]
+hasil = prediksi(contoh_baru)
+status = <span class="str">"CACAT"</span> <span class="kw">if</span> hasil >= <span class="nb">0.5</span> <span class="kw">else</span> <span class="str">"NORMAL"</span>
+print(<span class="str">f"\nPrediksi ban baru: {hasil:.4f} -> {status}"</span>)</pre>
+
+  <h3>5.4 Apa yang Berubah dari Praktik 1?</h3>
+  <table>
+    <tr><th>Aspek</th><th>Praktik 1</th><th>Praktik 2</th></tr>
+    <tr><td>Sumber data</td><td>1 baris statis di kode</td><td>Banyak baris dari Excel</td></tr>
+    <tr><td>Jumlah update per epoch</td><td>1 kali</td><td>N kali (satu per sampel)</td></tr>
+    <tr><td>Loss yang dilaporkan</td><td>Loss sampel tunggal</td><td>Rata-rata loss seluruh sampel</td></tr>
+    <tr><td>Rumus forward/backward</td><td colspan="2" style="text-align:center;color:var(--amber)">IDENTIK — tidak ada yang berubah</td></tr>
+  </table>
+
+  <div class="card note">
+    <span class="label">STOCHASTIC GRADIENT DESCENT (SGD)</span>
+    Karena kita mengupdate bobot setelah <b>setiap sampel</b> (bukan setelah seluruh dataset), metode ini disebut SGD. Varian "batch" akan mengakumulasi gradien dulu baru update sekali per epoch. Keduanya punya trade-off: SGD lebih cepat beradaptasi tapi "berisik"; batch lebih stabil tapi lambat. Di PyTorch nanti, <code class="inline">DataLoader</code> dengan <code class="inline">batch_size</code> mengatur kompromi ini.
+  </div>
+
+  <h3>5.5 Latihan Modifikasi</h3>
+  <ol class="steps">
+    <li><b>Ubah learning rate</b> menjadi 0.01, 0.1, 0.5, 1.0. Amati epoch ke berapa loss mulai stabil. Bandingkan dengan hasil eksperimen Bagian 1 — apakah polanya konsisten?</li>
+    <li><b>Ubah jumlah epoch</b> menjadi 10, 50, 500. Apakah loss terus turun, atau ada titik jenuh?</li>
+    <li><b>Tambah fitur baru</b> di Excel — misalnya "kedalaman_alur". Sesuaikan <code class="inline">fitur_kolom</code> di kode. Apakah akurasi prediksi membaik?</li>
+    <li><b>Uji data yang "abu-abu"</b> — fitur yang nilainya di tengah, misalnya <code class="inline">[0.5, 0.5, 0.5]</code>. Apakah prediksinya dekat 0.5? Mengapa?</li>
+  </ol>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="penutup">
+  <h2><span class="num">06</span> Diskusi Penutup — Kenapa Ini Belum Cukup?</h2>
+  <p class="lede">Kita sudah menutup siklus lengkap untuk neuron tunggal: teori → eksperimen → teori lanjutan → praktik skala. Tapi ada batas fundamental yang perlu disadari sebelum melangkah ke pertemuan berikutnya.</p>
+
+  <h3>6.1 Keterbatasan Neuron Tunggal</h3>
+  <p>Neuron tunggal hanya bisa mempelajari <b>satu batas keputusan linear</b>: sebuah "garis" (atau bidang) yang memisahkan cacat dari normal di ruang fitur. Selama data bisa dipisahkan oleh garis lurus, neuron tunggal cukup. Tapi banyak kasus nyata tidak demikian:</p>
+  <div class="diagram">
+Kasus linear (neuron tunggal cukup)     Kasus non-linear (perlu MLP)
+
+   0 0 0 | 1 1 1                            0 0 0 1 1
+   0 0 0 | 1 1 1                            0 0 0 1 1
+   0 0 0 | 1 1 1                            1 1 1 0 0
+   ──────────────                           1 1 1 0 0
+   garis lurus memisahkan                    tidak ada garis lurus
+                                              yang bisa memisahkan
+  </div>
+
+  <h3>6.2 Tiga Hal yang Akan Datang</h3>
+  <ol class="steps">
+    <li><b>MLP (Multi-Layer Perceptron)</b> — menumpuk neuron menjadi layer. Dengan aktivasi non-linear (ReLU), MLP bisa mempelajari batas keputusan yang jauh lebih rumit. Ini akan kita bahas di pertemuan berikutnya.</li>
+    <li><b>CNN (Convolutional Neural Network)</b> — untuk citra ban secara langsung, bukan fitur numerik yang sudah diekstrak manual. Konvolusi belajar "mata" sendiri untuk mendeteksi retak, sobek, gelembung.</li>
+    <li><b>PyTorch</b> — library yang menghitung gradien secara otomatis (autograd). <code class="inline">loss.backward()</code> akan menggantikan semua perhitungan chain rule manual yang kita tulis di Praktik 1 dan 2.</li>
+  </ol>
+
+  <h3>6.3 Koneksi ke Praktik 3</h3>
+  <p>Semua yang Anda pelajari hari ini akan langsung terpakai di Praktik 3, meski kodenya terlihat sangat berbeda:</p>
+  <table>
+    <tr><th>Konsep hari ini</th><th>Bentuknya di PyTorch</th></tr>
+    <tr><td>Forward propagation</td><td><code class="inline">output = model(gambar)</code></td></tr>
+    <tr><td>Fungsi loss</td><td><code class="inline">loss = criterion(output, label)</code></td></tr>
+    <tr><td>Backpropagation (chain rule)</td><td><code class="inline">loss.backward()</code></td></tr>
+    <tr><td>Gradient descent</td><td><code class="inline">optimizer.step()</code></td></tr>
+    <tr><td>Learning rate</td><td><code class="inline">optim.Adam(..., lr=0.001)</code></td></tr>
+    <tr><td>Epoch</td><td><code class="inline">for epoch in range(epochs):</code></td></tr>
+  </table>
+  <p>Karena itu, ketika nanti Anda menulis <code class="inline">loss.backward()</code>, Anda tidak perlu menganggapnya sebagai kotak hitam. Anda sudah pernah menghitungnya sendiri, baris per baris.</p>
+
+  <div class="card good">
+    <span class="label">YANG SUDAH ANDA KUASAI HARI INI</span>
+    <ul style="margin:6px 0 0 0;">
+      <li>Menghitung loss (MSE) dan menjelaskan mengapa ia dikuadratkan.</li>
+      <li>Menurunkan gradien lewat chain rule, dan mencocokkannya dengan kode.</li>
+      <li>Menjelaskan mengapa learning rate terlalu besar merusak training.</li>
+      <li>Melatih neuron yang sama pada banyak data dari file Excel nyata.</li>
+      <li>Menjelaskan apa yang masih kurang: non-linearitas berlapis (MLP) dan pemrosesan citra langsung (CNN).</li>
+    </ul>
+  </div>
+
+  <h3>6.4 Soal Latihan untuk Pertemuan Berikutnya</h3>
+  <ol class="steps">
+    <li>Di Praktik 2, jika <code class="inline">learning_rate = 1.0</code> dan <code class="inline">epochs = 100</code>, apakah loss tetap turun? Jalankan dan jelaskan hasilnya.</li>
+    <li>Buat dataset Excel kecil (10 baris) di mana label <code class="inline">cacat</code> dan <code class="inline">normal</code> <b>tidak bisa dipisahkan garis lurus</b>. Coba latih neuron tunggal — berapa akurasi terbaiknya? Mengapa tidak sempurna?</li>
+    <li>Cari tahu: apa itu <b>vanishing gradient</b>? Kaitkan dengan turunan sigmoid yang kita pakai hari ini.</li>
+  </ol>
+
+  <footer>
+    <span class="badge">Deep Learning</span><span class="badge">Backpropagation</span><span class="badge">Loss Function</span><span class="badge">Gradient Descent</span>
+    <p>Pertemuan 4 — menutup siklus neuron tunggal, membuka pintu ke jaringan berlapis.</p>
+  </footer>
+</section>
+
+</main>
+</div>
+</body>
+</html>

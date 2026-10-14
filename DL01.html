@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pengenalan AI — dari Konsep Dasar sampai Smart Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12141c;
+  --surface:#1b1e2b;
+  --surface-2:#242840;
+  --line:#343a55;
+  --gold:#e8a33d;
+  --gold-soft:#f3c988;
+  --azure:#6fa8c9;
+  --rose:#c96a5e;
+  --text:#efece2;
+  --text-muted:#a3a7bb;
+  --ring1: rgba(232,163,61,0.9);
+  --ring2: rgba(111,168,201,0.85);
+  --ring3: rgba(201,106,94,0.85);
+  --ring4: rgba(239,236,226,0.9);
+  --radius: 4px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  overflow:hidden;
+  height:100vh;
+  width:100vw;
+}
+.deck{
+  position:relative;
+  width:100vw;
+  height:100vh;
+}
+.bg-rings{
+  position:fixed;
+  right:-180px;
+  bottom:-180px;
+  width:640px;
+  height:640px;
+  pointer-events:none;
+  opacity:0.15;
+  z-index:0;
+}
+.slide{
+  position:absolute;
+  inset:0;
+  display:none;
+  padding:6vw 7vw 5vw 7vw;
+  flex-direction:column;
+  justify-content:center;
+  opacity:0;
+  transform:translateX(24px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.slide.active{
+  display:flex;
+  opacity:1;
+  transform:translateX(0);
+}
+@media (prefers-reduced-motion: reduce){
+  .slide{transition:none;}
+}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem;
+  letter-spacing:0.02em;
+  color:var(--gold);
+  margin-bottom:14px;
+}
+h1.display{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:clamp(2rem, 4.2vw, 3.6rem);
+  line-height:1.08;
+  margin:0 0 0.5rem 0;
+  color:var(--text);
+  max-width:16ch;
+}
+h2.slide-title{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:clamp(1.7rem, 3vw, 2.6rem);
+  line-height:1.12;
+  margin:0 0 1.6rem 0;
+  color:var(--text);
+  max-width:22ch;
+}
+.subtitle{
+  font-size:1.05rem;
+  color:var(--text-muted);
+  max-width:48ch;
+  line-height:1.55;
+  margin-bottom:0.4rem;
+}
+.content-grid{
+  display:grid;
+  grid-template-columns:1.1fr 0.9fr;
+  gap:4vw;
+  align-items:center;
+  flex:1;
+  min-height:0;
+}
+.content-grid.reverse{grid-template-columns:0.9fr 1.1fr;}
+.content-grid.reverse .text-col{order:2;}
+.content-grid.reverse .visual-col{order:1;}
+.text-col{max-width:52ch;}
+ul.points{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:0.85rem;
+}
+ul.points li{
+  position:relative;
+  padding-left:1.3rem;
+  font-size:1.03rem;
+  line-height:1.5;
+  color:var(--text);
+}
+ul.points li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0.55em;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--gold);
+}
+ul.points li strong{color:var(--gold-soft); font-weight:600;}
+.visual-col{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:0;
+}
+.visual-col svg, .visual-col .icon-grid{width:100%; max-width:520px;}
+.icon-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.icon-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:1.2rem;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:0.6rem;
+}
+.icon-card svg{width:32px; height:32px;}
+.icon-card span{font-size:0.85rem; color:var(--text-muted);}
+table.compare{
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.85rem;
+}
+table.compare th, table.compare td{
+  border:1px solid var(--line);
+  padding:0.65rem 0.7rem;
+  text-align:left;
+  vertical-align:top;
+}
+table.compare thead th{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem;
+  color:var(--text-muted);
+  background:var(--surface);
+}
+table.compare th:nth-child(2){color:var(--gold-soft);}
+table.compare th:nth-child(3){color:var(--azure);}
+table.compare th:nth-child(4){color:var(--rose);}
+table.compare td:first-child{color:var(--text-muted); font-size:0.78rem;}
+.glossary-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:1rem;
+  overflow-y:auto;
+  max-height:56vh;
+  padding-right:4px;
+}
+.gterm{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:1rem 1.1rem;
+}
+.gterm .term{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  color:var(--gold-soft);
+  font-size:1.02rem;
+  margin-bottom:0.35rem;
+}
+.gterm .def{font-size:0.86rem; color:var(--text-muted); line-height:1.45;}
+.nav{
+  position:fixed;
+  bottom:28px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:18px;
+  z-index:20;
+  background:rgba(27,30,43,0.85);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:8px 10px;
+  backdrop-filter:blur(6px);
+}
+.nav button{
+  background:none;
+  border:none;
+  color:var(--text);
+  cursor:pointer;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .2s ease;
+}
+.nav button:hover{background:var(--surface-2);}
+.nav button:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+.nav button svg{width:16px; height:16px;}
+.dots{display:flex; gap:5px;}
+.dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--line);
+  cursor:pointer;
+  transition:background .2s ease, transform .2s ease;
+}
+.dot.active{background:var(--gold); transform:scale(1.3);}
+.counter{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem;
+  color:var(--text-muted);
+  min-width:44px;
+  text-align:center;
+}
+.notes-toggle{
+  position:fixed;
+  top:24px;
+  right:28px;
+  z-index:20;
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem;
+  padding:8px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.notes-toggle:hover{color:var(--text); border-color:var(--gold);}
+.notes-toggle:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+.notes-panel{
+  position:fixed;
+  left:0; right:0; bottom:0;
+  background:var(--surface-2);
+  border-top:1px solid var(--line);
+  padding:1.4rem 7vw;
+  transform:translateY(100%);
+  transition:transform .35s ease;
+  z-index:15;
+  max-height:34vh;
+  overflow-y:auto;
+}
+.notes-panel.open{transform:translateY(0);}
+.notes-panel .label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.68rem;
+  color:var(--gold);
+  margin-bottom:0.5rem;
+}
+.notes-panel p{
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:1.15rem;
+  line-height:1.55;
+  color:var(--text);
+  max-width:70ch;
+  margin:0;
+}
+.slide-num{
+  position:fixed;
+  top:26px;
+  left:7vw;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem;
+  color:var(--text-muted);
+  z-index:20;
+}
+.badge{
+  display:inline-block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.68rem;
+  padding:3px 9px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  color:var(--text-muted);
+  margin-top:0.9rem;
+}
+.badge.now{color:var(--gold); border-color:var(--gold);}
+@media (max-width:820px){
+  .content-grid, .content-grid.reverse{grid-template-columns:1fr; grid-template-rows:auto auto;}
+  .content-grid.reverse .text-col{order:1;}
+  .content-grid.reverse .visual-col{order:2;}
+  .glossary-grid{grid-template-columns:1fr;}
+  .slide{padding:20vw 6vw 8vw 6vw;}
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <svg class="bg-rings" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="var(--gold)" stroke-width="1"/><circle cx="100" cy="100" r="65" fill="none" stroke="var(--azure)" stroke-width="1"/><circle cx="100" cy="100" r="40" fill="none" stroke="var(--rose)" stroke-width="1"/><circle cx="100" cy="100" r="16" fill="none" stroke="var(--text)" stroke-width="1"/></svg>
+
+  <!-- SLIDE 1 -->
+  <section class="slide active">
+    <div class="eyebrow">01 — PEMBUKA</div>
+    <h1 class="display">Pengenalan AI</h1>
+    <p class="subtitle">Memahami kecerdasan buatan tanpa pusing jargon.</p>
+    <svg width="220" height="220" viewBox="0 0 200 200" style="margin-top:2rem;">
+      <circle cx="100" cy="100" r="90" fill="none" stroke="var(--ring1)" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="65" fill="none" stroke="var(--ring2)" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="40" fill="none" stroke="var(--ring3)" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="16" fill="var(--gold)" opacity="0.9"/>
+    </svg>
+  </section>
+
+  <!-- SLIDE 2 -->
+  <section class="slide">
+    <div class="eyebrow">02 — DEFINISI</div>
+    <h2 class="slide-title">Apa itu AI, sebenarnya?</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>AI (Artificial Intelligence)</strong> — bukan "kecerdasan sejati", tapi otomasi tugas yang biasanya butuh kecerdasan manusia.</li>
+          <li>Tiga elemen kuncinya: belajar dari data, mengenali pola, lalu membuat keputusan atau prediksi.</li>
+          <li>AI bukan robot fisik — AI adalah "otaknya", bukan "badannya".</li>
+          <li><strong>Analogi:</strong> seperti anak kecil belajar mengenali warna — makin banyak contoh yang dilihat, makin pintar dia. AI bekerja persis sama!</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <div class="icon-grid">
+          <div class="icon-card"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="1"/><path d="M3 8h18"/></svg><span>Rekomendasi tontonan</span></div>
+          <div class="icon-card"><svg viewBox="0 0 24 24" fill="none" stroke="var(--azure)" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 6l9 6 9-6"/></svg><span>Filter spam email</span></div>
+          <div class="icon-card"><svg viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="1.6"><path d="M12 2C7 2 4 5.5 4 9.5c0 5.5 8 12.5 8 12.5s8-7 8-12.5C20 5.5 17 2 12 2z"/><circle cx="12" cy="9.5" r="2.3"/></svg><span>Penunjuk arah/peta</span></div>
+          <div class="icon-card"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.6"><rect x="8" y="2" width="8" height="14" rx="4"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg><span>Asisten suara</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 -->
+  <section class="slide">
+    <div class="eyebrow">03 — HIERARKI</div>
+    <h2 class="slide-title">AI, ML, DL: seperti boneka Rusia bersarang</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>AI</strong> — boneka paling besar, segala usaha bikin mesin "pintar".</li>
+          <li><strong>Machine Learning (ML)</strong> — mesin belajar dari data, bukan diprogram manual.</li>
+          <li><strong>Deep Learning (DL)</strong> — boneka terkecil, pakai jaringan saraf tiruan berlapis.</li>
+          <li>Semua DL pasti ML, semua ML pasti AI — tidak sebaliknya.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="115" fill="none" stroke="var(--ring1)" stroke-width="1.5"/>
+          <text x="130" y="30" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="11">AI</text>
+          <circle cx="130" cy="130" r="82" fill="none" stroke="var(--ring2)" stroke-width="1.5"/>
+          <text x="130" y="63" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="10">Machine Learning</text>
+          <circle cx="130" cy="130" r="48" fill="none" stroke="var(--ring3)" stroke-width="1.5"/>
+          <text x="130" y="96" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="9">Deep Learning</text>
+          <circle cx="130" cy="130" r="18" fill="var(--surface-2)" stroke="var(--text)" stroke-width="1.2"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 -->
+  <section class="slide">
+    <div class="eyebrow">04 — PERBANDINGAN</div>
+    <h2 class="slide-title">AI vs Machine Learning vs Deep Learning</h2>
+    <table class="compare">
+      <thead><tr><th>Aspek</th><th>AI</th><th>Machine Learning</th><th>Deep Learning</th></tr></thead>
+      <tbody>
+        <tr><td>Definisi</td><td>Konsep umum mesin "pintar"</td><td>Mesin belajar dari data</td><td>Belajar via jaringan saraf berlapis</td></tr>
+        <tr><td>Cara kerja</td><td>Aturan/logika, bisa manual</td><td>Pola dari data statistik</td><td>Jaringan neuron banyak lapisan</td></tr>
+        <tr><td>Kebutuhan data</td><td>Bervariasi</td><td>Sedang–banyak</td><td>Sangat banyak</td></tr>
+        <tr><td>Contoh</td><td>Chatbot sederhana, GPS</td><td>Prediksi cuaca, deteksi spam</td><td>Pengenalan wajah, ChatGPT</td></tr>
+        <tr><td>Analogi</td><td>"Otak buatan" secara umum</td><td>Murid belajar dari contoh soal</td><td>Murid jenius yang belajar pola rumit sendiri</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SLIDE 5 -->
+  <section class="slide">
+    <div class="eyebrow">05 — TEORI</div>
+    <h2 class="slide-title">4 pendekatan dalam membangun AI</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Symbolic AI</strong> — mesin mengikuti aturan yang ditetapkan manusia, logika IF-THEN yang ketat dan transparan.</li>
+          <li><strong>Connectionist AI</strong> — mesin belajar dari pola data, terinspirasi cara kerja otak manusia lewat neural network.</li>
+          <li><strong>Evolutionary AI</strong> — mesin "berevolusi", algoritma genetik menyaring solusi terbaik secara alami.</li>
+          <li><strong>Hybrid AI</strong> — kombinasi ketiganya, mengambil kelebihan masing-masing sesuai kebutuhan masalah.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 200">
+          <line x1="130" y1="10" x2="130" y2="190" stroke="var(--line)" stroke-width="1"/>
+          <line x1="10" y1="100" x2="250" y2="100" stroke="var(--line)" stroke-width="1"/>
+          <text x="65" y="55" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="9">Symbolic</text>
+          <text x="65" y="70" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="9">AI</text>
+          <text x="195" y="55" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="9">Connectionist</text>
+          <text x="195" y="70" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="9">AI</text>
+          <text x="65" y="140" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="9">Evolutionary</text>
+          <text x="65" y="155" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="9">AI</text>
+          <text x="195" y="140" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono" font-size="9">Hybrid</text>
+          <text x="195" y="155" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono" font-size="9">AI</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6 -->
+  <section class="slide">
+    <div class="eyebrow">06 — TINGKATAN</div>
+    <h2 class="slide-title">ANI, AGI, ASI: tiga anak tangga kecerdasan</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>ANI</strong> — AI sempit, jago di satu tugas. Contoh: ChatGPT, AlphaGo, Spotify. Inilah posisi kita hari ini!</li>
+          <li><strong>AGI</strong> — AI umum, setara manusia di berbagai bidang. Belum ada, mungkin 10–30 tahun lagi.</li>
+          <li><strong>ASI</strong> — AI super, melampaui manusia di segala hal. Masih fiksi ilmiah ala film Hollywood.</li>
+          <li>Analogi: atlet 1 cabang, atlet serba bisa, atlet yang kalahkan semua atlet manusia.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 180">
+          <rect x="20" y="130" width="60" height="35" fill="var(--surface)" stroke="var(--gold)" stroke-width="1"/>
+          <text x="50" y="152" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="10">ANI</text>
+          <rect x="100" y="85" width="60" height="80" fill="var(--surface)" stroke="var(--azure)" stroke-width="1"/>
+          <text x="130" y="128" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="10">AGI</text>
+          <rect x="180" y="30" width="60" height="135" fill="var(--surface)" stroke="var(--rose)" stroke-width="1"/>
+          <text x="210" y="100" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="10">ASI</text>
+          <text x="50" y="122" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">sekarang</text>
+          <text x="130" y="78" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">masa depan?</text>
+          <text x="210" y="24" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">fiksi ilmiah?</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7 -->
+  <section class="slide">
+    <div class="eyebrow">07 — GENERATIF</div>
+    <h2 class="slide-title">AI Generatif &amp; LLM: AI yang bisa "berkarya"</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>AI generatif</strong> menciptakan konten baru (teks, gambar, musik, video), bukan cuma mengenali.</li>
+          <li><strong>LLM (Large Language Model)</strong> — AI generatif khusus bahasa, dilatih dari miliaran teks.</li>
+          <li>Bisa menulis, menjawab, menerjemahkan, membuat kode, meringkas dokumen.</li>
+          <li>Cara kerjanya: memprediksi kata berikutnya berdasarkan kata sebelumnya — seperti <strong>autocomplete di HP</strong>, tapi jauh, jauh lebih canggih.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 160">
+          <rect x="10" y="20" width="110" height="120" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <text x="65" y="45" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="8">AI TRADISIONAL</text>
+          <circle cx="65" cy="90" r="22" fill="none" stroke="var(--azure)" stroke-width="1.4"/>
+          <text x="65" y="94" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="8">"kucing"</text>
+          <rect x="140" y="20" width="110" height="120" fill="none" stroke="var(--gold)" stroke-width="1"/>
+          <text x="195" y="45" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="8">AI GENERATIF</text>
+          <path d="M175 100 l15 -30 l15 30 z" fill="var(--gold)" opacity="0.85"/>
+          <text x="195" y="120" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="8">menciptakan baru</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8 -->
+  <section class="slide">
+    <div class="eyebrow">08 — POSISI LLM</div>
+    <h2 class="slide-title">Di mana LLM dalam hierarki AI?</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li>Update boneka Rusia kita: <strong>AI → ML → DL → LLM</strong>.</li>
+          <li>LLM adalah bentuk paling canggih dari Deep Learning saat ini.</li>
+          <li>Dibangun di atas arsitektur bernama <strong>Transformer</strong> (Google, 2017).</li>
+          <li>"Large" karena dilatih dengan miliaran–triliunan parameter dan data raksasa.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 260">
+          <circle cx="130" cy="130" r="115" fill="none" stroke="var(--ring1)" stroke-width="1.2"/>
+          <circle cx="130" cy="130" r="82" fill="none" stroke="var(--ring2)" stroke-width="1.2"/>
+          <circle cx="130" cy="130" r="48" fill="none" stroke="var(--ring3)" stroke-width="1.2"/>
+          <circle cx="130" cy="130" r="18" fill="var(--gold)" stroke="var(--gold-soft)" stroke-width="2"/>
+          <text x="130" y="134" text-anchor="middle" fill="var(--ink)" font-family="JetBrains Mono" font-size="8" font-weight="700">LLM</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9 -->
+  <section class="slide">
+    <div class="eyebrow">09 — TRANSFORMER</div>
+    <h2 class="slide-title">Cara kerja Transformer: mekanisme Attention</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Transformer</strong> "memperhatikan" seluruh kalimat sekaligus, bukan kata demi kata.</li>
+          <li><strong>Attention</strong> menentukan kata mana yang paling relevan saat memahami sebuah kata.</li>
+          <li>Model memberi "skor perhatian" ke tiap kata lain dalam kalimat.</li>
+          <li>Inilah kenapa LLM bisa paham konteks panjang dan kalimat rumit.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 320 140">
+          <text x="20" y="40" fill="var(--text)" font-family="Inter" font-size="13">Kucing itu makan ikan karena <tspan fill="var(--gold-soft)" font-weight="600">ia</tspan> lapar</text>
+          <path d="M40 55 Q 90 100 235 55" fill="none" stroke="var(--gold)" stroke-width="2"/>
+          <path d="M175 55 Q 205 90 235 55" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="130" y="115" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="8">garis tebal = perhatian tinggi</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 10 -->
+  <section class="slide">
+    <div class="eyebrow">10 — MULTI-HEAD</div>
+    <h2 class="slide-title">Multi-Head Attention: banyak sudut pandang sekaligus</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li>Model punya <strong>banyak "kepala perhatian"</strong> yang jalan bersamaan, bukan cuma satu.</li>
+          <li>Tiap head fokus ke aspek berbeda: subjek-predikat, hubungan waktu, sebab-akibat, dan konteks lainnya.</li>
+          <li>Analogi: membaca dengan banyak "lensa" berbeda secara paralel, seperti banyak editor baca naskah yang sama dari sudut beda.</li>
+          <li><strong>GPT-4 memakai 96 attention heads</strong> sekaligus untuk memahami bahasa — salah satu rahasia kehebatannya.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 180">
+          <text x="130" y="95" text-anchor="middle" fill="var(--text)" font-family="Inter" font-size="11">"kucing makan ikan"</text>
+          <circle cx="60" cy="40" r="22" fill="none" stroke="var(--gold)" stroke-width="1.3"/>
+          <text x="60" y="44" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="6">Head 1</text>
+          <circle cx="200" cy="40" r="22" fill="none" stroke="var(--azure)" stroke-width="1.3"/>
+          <text x="200" y="44" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="6">Head 2</text>
+          <circle cx="60" cy="150" r="22" fill="none" stroke="var(--rose)" stroke-width="1.3"/>
+          <text x="60" y="154" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="6">Head 3</text>
+          <circle cx="200" cy="150" r="22" fill="none" stroke="var(--text)" stroke-width="1.3"/>
+          <text x="200" y="154" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono" font-size="6">Head 4</text>
+          <line x1="78" y1="55" x2="115" y2="82" stroke="var(--line)" stroke-width="1"/>
+          <line x1="182" y1="55" x2="145" y2="82" stroke="var(--line)" stroke-width="1"/>
+          <line x1="78" y1="135" x2="115" y2="105" stroke="var(--line)" stroke-width="1"/>
+          <line x1="182" y1="135" x2="145" y2="105" stroke="var(--line)" stroke-width="1"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 11 -->
+  <section class="slide">
+    <div class="eyebrow">11 — PELATIHAN</div>
+    <h2 class="slide-title">3 tahap pelatihan LLM (termasuk RLHF)</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Pre-training</strong> — membaca data teks raksasa dari internet untuk belajar pola bahasa.</li>
+          <li><strong>Fine-tuning</strong> — dilatih pakai contoh percakapan berkualitas agar mengikuti instruksi.</li>
+          <li><strong>RLHF</strong> — manusia menilai jawaban model, model "dihadiahi" untuk jawaban yang disukai.</li>
+          <li>Analogi: baca perpustakaan → ikut kursus → dapat feedback dari mentor terus-menerus.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 300 100">
+          <rect x="0" y="30" width="80" height="40" fill="none" stroke="var(--gold)" stroke-width="1.2"/>
+          <text x="40" y="53" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="7">Pre-training</text>
+          <path d="M85 50 L105 50" stroke="var(--line)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="110" y="30" width="80" height="40" fill="none" stroke="var(--azure)" stroke-width="1.2"/>
+          <text x="150" y="53" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="7">Fine-tuning</text>
+          <path d="M195 50 L215 50" stroke="var(--line)" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <rect x="220" y="30" width="80" height="40" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+          <text x="260" y="53" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="7">RLHF</text>
+          <defs><marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="var(--line)"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 12 -->
+  <section class="slide">
+    <div class="eyebrow">12 — KELEMAHAN</div>
+    <h2 class="slide-title">Kelemahan LLM: nggak sesempurna yang dikira</h2>
+    <div class="text-col" style="max-width:70ch;">
+      <ul class="points">
+        <li><strong>Halusinasi</strong> — bisa "mengarang" fakta yang terdengar meyakinkan tapi salah total.</li>
+        <li><strong>Tidak benar-benar mengerti</strong> — menebak pola statistik kata, bukan berpikir seperti manusia.</li>
+        <li><strong>Data terbatas waktu</strong> — pengetahuan model berhenti di titik data pelatihan (cutoff).</li>
+        <li><strong>Bisa dimanipulasi</strong> — rentan disalahgunakan lewat prompt tertentu.</li>
+        <li><strong>Percaya diri tapi belum tentu benar</strong> — selalu perlu dicek ulang.</li>
+      </ul>
+      <div class="badge now">Selalu verifikasi ulang jawaban AI untuk hal penting</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 13 -->
+  <section class="slide">
+    <div class="eyebrow">13 — ETIKA</div>
+    <h2 class="slide-title">Bahaya sosial &amp; etis LLM</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Bias &amp; diskriminasi</strong> — mewarisi bias dari data pelatihan.</li>
+          <li><strong>Misinformasi</strong> — bisa bikin konten palsu secara massal dan cepat.</li>
+          <li><strong>Privasi data</strong> — risiko data pribadi ikut terserap/bocor.</li>
+          <li><strong>Ketergantungan berlebihan</strong> — orang malas berpikir kritis.</li>
+          <li><strong>Dampak lapangan kerja &amp; penyalahgunaan</strong> — otomatisasi dan potensi penipuan.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 240 240">
+          <circle cx="120" cy="120" r="95" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="120" cy="120" r="26" fill="var(--surface)" stroke="var(--gold)" stroke-width="1.3"/>
+          <circle cx="120" cy="25" r="16" fill="none" stroke="var(--gold-soft)" stroke-width="1.2"/>
+          <circle cx="205" cy="70" r="16" fill="none" stroke="var(--azure)" stroke-width="1.2"/>
+          <circle cx="205" cy="170" r="16" fill="none" stroke="var(--rose)" stroke-width="1.2"/>
+          <circle cx="120" cy="215" r="16" fill="none" stroke="var(--text)" stroke-width="1.2"/>
+          <circle cx="35" cy="170" r="16" fill="none" stroke="var(--gold)" stroke-width="1.2"/>
+          <circle cx="35" cy="70" r="16" fill="none" stroke="var(--azure)" stroke-width="1.2"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 14 -->
+  <section class="slide">
+    <div class="eyebrow">14 — RINGKASAN</div>
+    <h2 class="slide-title">Yang perlu kalian ingat</h2>
+    <div class="text-col" style="max-width:70ch;">
+      <ul class="points">
+        <li>AI = payung besar; ML &amp; DL cara AI "belajar", makin ke dalam makin canggih.</li>
+        <li>LLM = AI generatif berbasis Transformer, jago di bidang bahasa.</li>
+        <li>Kekuatannya: attention mechanism yang paham konteks kalimat kompleks.</li>
+        <li>Dilatih lewat 3 tahap: pre-training, fine-tuning, RLHF.</li>
+        <li>Sangat pintar, tapi tidak sempurna — tetap perlu dicek dan digunakan bijak.</li>
+        <li>Kita masih di era ANI — AGI dan ASI masih wacana masa depan.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SLIDE 15 -->
+  <section class="slide">
+    <div class="eyebrow">15 — PENUTUP</div>
+    <h1 class="display">Terima kasih. Ada pertanyaan?</h1>
+    <p class="subtitle">Yuk gunakan AI secara cerdas dan bertanggung jawab.</p>
+  </section>
+
+  <!-- SLIDE 16 -->
+  <section class="slide">
+    <div class="eyebrow">16 — GLOSARIUM</div>
+    <h2 class="slide-title">Istilah penting yang wajib diingat</h2>
+    <div class="glossary-grid">
+      <div class="gterm"><div class="term">AI</div><div class="def">Kecerdasan buatan; mesin yang meniru kemampuan berpikir manusia.</div></div>
+      <div class="gterm"><div class="term">Machine Learning</div><div class="def">Cabang AI di mana mesin belajar dari data, bukan aturan manual.</div></div>
+      <div class="gterm"><div class="term">Deep Learning</div><div class="def">Teknik ML memakai jaringan saraf tiruan berlapis-lapis.</div></div>
+      <div class="gterm"><div class="term">LLM</div><div class="def">Model AI generatif raksasa untuk memahami &amp; menghasilkan bahasa.</div></div>
+      <div class="gterm"><div class="term">Transformer</div><div class="def">Arsitektur di balik LLM modern, memakai mekanisme attention.</div></div>
+      <div class="gterm"><div class="term">Attention</div><div class="def">Cara model "memperhatikan" kata paling relevan dalam kalimat.</div></div>
+      <div class="gterm"><div class="term">RLHF</div><div class="def">Pelatihan model berdasarkan penilaian/feedback manusia.</div></div>
+      <div class="gterm"><div class="term">Halusinasi</div><div class="def">Model menghasilkan info meyakinkan tapi sebenarnya salah.</div></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 17 -->
+  <section class="slide">
+    <div class="eyebrow">17 — SEJARAH</div>
+    <h2 class="slide-title">Sejarah generasi: dari mesin uap ke Smart Factory</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Industri 1.0 (akhir abad 18)</strong> — mesin uap menggantikan tenaga otot dan air; awal mekanisasi pabrik.</li>
+          <li><strong>Industri 2.0 (akhir abad 19)</strong> — listrik masuk pabrik, lahir jalur perakitan (assembly line) untuk produksi massal.</li>
+          <li><strong>Industri 3.0 (tahun 1970-an)</strong> — komputer dan otomasi (PLC, robot industri awal) mulai menggantikan pekerjaan manual berulang.</li>
+          <li><strong>Industri 4.0 (2010-an–sekarang)</strong> — IoT, big data, dan AI membuat mesin saling terhubung dan "berpikir" sendiri. Inilah era Smart Factory.</li>
+          <li>Setiap generasi tidak menghapus generasi sebelumnya, tapi menambahkan lapisan kecerdasan baru di atasnya.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 280 160">
+          <line x1="20" y1="130" x2="260" y2="130" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="40" cy="130" r="6" fill="var(--gold)"/>
+          <circle cx="110" cy="130" r="6" fill="var(--azure)"/>
+          <circle cx="180" cy="130" r="6" fill="var(--rose)"/>
+          <circle cx="250" cy="130" r="7" fill="var(--text)"/>
+          <text x="40" y="110" text-anchor="middle" fill="var(--gold-soft)" font-family="JetBrains Mono" font-size="8">1.0</text>
+          <text x="110" y="110" text-anchor="middle" fill="var(--azure)" font-family="JetBrains Mono" font-size="8">2.0</text>
+          <text x="180" y="110" text-anchor="middle" fill="var(--rose)" font-family="JetBrains Mono" font-size="8">3.0</text>
+          <text x="250" y="110" text-anchor="middle" fill="var(--text)" font-family="JetBrains Mono" font-size="8">4.0</text>
+          <text x="40" y="150" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="6">Mesin Uap</text>
+          <text x="110" y="150" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="6">Listrik</text>
+          <text x="180" y="150" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="6">Komputer</text>
+          <text x="250" y="150" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="6">AI/IoT</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 18 -->
+  <section class="slide">
+    <div class="eyebrow">18 — STUDI KASUS</div>
+    <h2 class="slide-title">Apa itu Smart Factory?</h2>
+    <div class="content-grid">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Smart Factory</strong> — pabrik yang mesin, sensor, dan sistemnya saling terhubung serta bisa "mengambil keputusan" sendiri secara real-time.</li>
+          <li>Bagian dari konsep <strong>Industri 4.0</strong> — gabungan IoT (Internet of Things), big data, dan AI di lantai produksi.</li>
+          <li>Bedanya dengan pabrik biasa: pabrik biasa butuh manusia mengecek dan memutuskan; Smart Factory bisa mendeteksi masalah dan menyesuaikan diri otomatis.</li>
+          <li>Analogi: pabrik biasa itu seperti mobil manual, Smart Factory itu seperti mobil self-driving — sama-sama jalan, tapi yang satu bisa "berpikir" sendiri.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 260 200">
+          <rect x="20" y="120" width="50" height="60" fill="none" stroke="var(--gold)" stroke-width="1.3"/>
+          <rect x="105" y="90" width="50" height="90" fill="none" stroke="var(--azure)" stroke-width="1.3"/>
+          <rect x="190" y="60" width="50" height="120" fill="none" stroke="var(--rose)" stroke-width="1.3"/>
+          <circle cx="45" cy="105" r="4" fill="var(--gold)"/>
+          <circle cx="130" cy="75" r="4" fill="var(--azure)"/>
+          <circle cx="215" cy="45" r="4" fill="var(--rose)"/>
+          <line x1="45" y1="105" x2="130" y2="75" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+          <line x1="130" y1="75" x2="215" y2="45" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="45" y="195" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">Sensor</text>
+          <text x="130" y="195" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">Mesin</text>
+          <text x="215" y="195" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">Sistem AI</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 19 -->
+  <section class="slide">
+    <div class="eyebrow">19 — PENERAPAN</div>
+    <h2 class="slide-title">Peran AI di dalam Smart Factory</h2>
+    <div class="text-col" style="max-width:74ch;">
+      <ul class="points">
+        <li><strong>Predictive maintenance</strong> — AI memprediksi mesin akan rusak sebelum benar-benar rusak, dari pola getaran/suhu/suara.</li>
+        <li><strong>Quality control dengan computer vision</strong> — kamera + AI mendeteksi produk cacat jauh lebih cepat dan teliti dari mata manusia.</li>
+        <li><strong>Robotika cerdas</strong> — lengan robot yang bisa menyesuaikan gerakan sendiri, bukan cuma mengikuti program tetap.</li>
+        <li><strong>Digital twin</strong> — "kembaran virtual" pabrik untuk simulasi dan uji coba sebelum diterapkan di dunia nyata.</li>
+        <li><strong>Optimasi rantai pasok</strong> — AI meramal permintaan dan mengatur stok/produksi secara otomatis.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SLIDE 20 -->
+  <section class="slide">
+    <div class="eyebrow">20 — DAMPAK</div>
+    <h2 class="slide-title">Manfaat &amp; tantangan Smart Factory</h2>
+    <div class="content-grid reverse">
+      <div class="text-col">
+        <ul class="points">
+          <li><strong>Manfaat:</strong> efisiensi produksi naik, downtime mesin turun, kualitas produk lebih konsisten, biaya operasional lebih hemat jangka panjang.</li>
+          <li><strong>Tantangan:</strong> investasi awal besar, butuh keahlian baru bagi pekerja, risiko keamanan siber meningkat karena semua saling terhubung.</li>
+          <li>Transisi ke Smart Factory bertahap — bukan "ganti semua sekaligus", tapi dimulai dari satu lini produksi dulu.</li>
+          <li>Manusia tetap berperan penting: mengawasi, mengambil keputusan strategis, dan menangani hal di luar dugaan sistem.</li>
+        </ul>
+      </div>
+      <div class="visual-col">
+        <svg viewBox="0 0 240 180">
+          <line x1="20" y1="150" x2="220" y2="150" stroke="var(--line)" stroke-width="1"/>
+          <line x1="20" y1="150" x2="20" y2="20" stroke="var(--line)" stroke-width="1"/>
+          <path d="M20 140 L70 110 L120 95 L170 55 L220 30" fill="none" stroke="var(--gold)" stroke-width="1.6"/>
+          <circle cx="220" cy="30" r="4" fill="var(--gold)"/>
+          <text x="120" y="170" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">tahapan adopsi Smart Factory</text>
+          <text x="30" y="30" fill="var(--text-muted)" font-family="JetBrains Mono" font-size="7">efisiensi</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 21 -->
+  <section class="slide">
+    <div class="eyebrow">21 — PENUTUP LANJUTAN</div>
+    <h1 class="display">Smart Factory: masa depan industri dimulai dari sekarang</h1>
+    <p class="subtitle">AI bukan pengganti manusia di pabrik — AI adalah alat yang membuat manusia bekerja lebih cerdas.</p>
+  </section>
+
+</div>
+
+<div class="slide-num" id="slideNum">01 / 16</div>
+
+<button class="notes-toggle" id="notesToggle" aria-pressed="false">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v14H8l-4 4z"/></svg>
+  catatan pembicara
+</button>
+
+<nav class="nav" aria-label="Navigasi slide">
+  <button id="prevBtn" aria-label="Slide sebelumnya"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <div class="dots" id="dots"></div>
+  <button id="nextBtn" aria-label="Slide berikutnya"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+</nav>
+
+<div class="notes-panel" id="notesPanel">
+  <div class="label">CATATAN PEMBICARA</div>
+  <p id="notesText"></p>
+</div>
+
+<script>
+const notes = [
+"Selamat pagi/siang semuanya! Hari ini kita akan ngobrolin salah satu topik paling hangat di dunia: Artificial Intelligence. Tenang, kita nggak akan bahas rumus rumit, tapi kita bongkar cara kerjanya pelan-pelan sampai kalian ngerti kenapa ChatGPT bisa 'sepintar' itu.",
+"AI itu sebenarnya bukan soal 'kecerdasan sejati' — lebih tepatnya, ini soal mengotomasi tugas yang biasanya butuh kecerdasan manusia. Coba bayangkan anak kecil yang belajar mengenali warna: makin banyak contoh yang dia lihat, makin pintar dia menebak. AI bekerja persis kayak gitu, cuma 'anak kecil'-nya adalah komputer dan 'contoh'-nya adalah jutaan data.",
+"Coba bayangkan boneka Rusia yang bersarang itu — yang gede di luar, makin ke dalam makin kecil. AI itu boneka paling luar, konsepnya paling luas. Di dalamnya ada Machine Learning, cara mesin belajar sendiri dari data. Dan di paling dalam ada Deep Learning, yang pakai jaringan saraf tiruan super kompleks.",
+"Biar makin jelas bedanya, saya bikin tabel perbandingan ini. Yang penting diingat: AI itu payung besar, ML itu caranya mesin belajar dari data, dan DL itu teknik ML paling canggih dan butuh data paling banyak. Semakin ke kanan tabel ini, semakin 'niru otak manusia' cara kerjanya.",
+"Ternyata ada empat aliran besar dalam membangun AI. Symbolic AI itu kayak robot yang diajarin aturan tegas: kalau ini terjadi, lakukan itu. Connectionist AI belajar dari pola data, terinspirasi cara kerja otak manusia. Evolutionary AI 'berevolusi' kayak seleksi alam buat cari solusi terbaik. Dan Hybrid AI ya gabungan ketiganya, ambil yang terbaik sesuai masalahnya.",
+"Ini penting banget: semua AI yang kita pakai sekarang — ChatGPT, AlphaGo, bahkan Spotify — itu masuk kategori ANI, jago di tugas spesifik tapi nggak punya kesadaran umum. AGI, AI yang sepintar manusia di segala bidang, diperkirakan masih 10 sampai 30 tahun lagi, kalau memang bisa tercapai. Dan ASI? Itu masih di ranah film fiksi ilmiah ala Hollywood.",
+"Nah ini bedanya AI generatif sama AI biasa: kalau AI biasa cuma mengenali sesuatu — misal 'ini foto kucing atau anjing' — AI generatif bisa BIKIN sesuatu yang baru. Cara kerjanya sebenarnya simpel banget secara konsep: dia cuma nebak kata berikutnya, kayak fitur autocomplete di HP kalian, cuma versi ini jauh, jauh lebih canggih. LLM adalah AI generatif khusus bahasa, dan ini yang bikin heboh dunia sejak ChatGPT rilis akhir 2022.",
+"Inget boneka Rusia tadi? Sekarang kita tambahkan satu lapisan lagi paling dalam: LLM. LLM adalah bentuk paling mutakhir dari Deep Learning, dibangun pakai arsitektur bernama Transformer, yang bakal kita bedah di slide berikutnya karena ini jantungnya AI generatif modern.",
+"Ini bagian paling seru: gimana sih LLM bisa 'paham' konteks kalimat? Rahasianya di mekanisme Attention. Lihat kalimat ini — kata 'ia' merujuk ke siapa, kucing atau ikan? Manusia otomatis tahu itu kucing, dan model AI juga belajar 'memberi perhatian lebih' ke kata kucing lewat attention.",
+"Attention tadi ternyata dijalankan berkali-kali secara paralel — makanya disebut Multi-Head Attention. Bayangin kalian baca satu kalimat pakai banyak lensa berbeda sekaligus: satu lensa lihat siapa-melakukan-apa, satu lagi lihat hubungan waktu, satu lagi lihat sebab-akibat. Nah, GPT-4 itu pakai 96 lensa alias attention heads sekaligus — itu salah satu rahasia kenapa dia bisa sepintar itu.",
+"Gimana sih ChatGPT dilatih sampai bisa sesopan dan sepintar itu? Ada tiga tahap. Pertama, model 'membaca' hampir seluruh internet. Kedua, dilatih lagi pakai contoh percakapan yang lebih rapi. Ketiga — RLHF — manusia beneran menilai jawaban model, dan model dihadiahi untuk jawaban yang disukai.",
+"Penting banget kita sadari: LLM bukan dewa yang mahatahu. Dia bisa 'halusinasi', ngarang fakta dengan pede padahal salah. Dia juga nggak benar-benar 'mengerti' seperti manusia, cuma jago nebak pola kata. Apapun jawaban AI, tetap harus dicek ulang kebenarannya untuk hal penting.",
+"Selain kelemahan teknis, ada isu lebih besar soal dampak sosial dan etika. Model bisa 'nurun' bias dari data yang dipelajarinya, bisa disalahgunakan buat sebar hoaks, dan kita harus jaga supaya nggak keterusan malas mikir sendiri karena keenakan tanya AI terus. Ini PR bareng buat kita semua.",
+"Sebelum kita tutup, yuk rangkum perjalanan kita: dari AI sebagai konsep besar, turun ke ML dan DL yang makin spesifik, sampai LLM yang jadi bintang utama sekarang. Kita juga bongkar cara kerjanya lewat attention, cara dilatih lewat RLHF, dan sadar bahwa AI ini hebat tapi bukan tanpa cela.",
+"Itu tadi perjalanan kita dari dasar-dasar AI sampai ke LLM yang lagi booming sekarang. Terima kasih banyak atas perhatiannya! Sekarang saya buka sesi tanya jawab — silakan kalau ada yang mau ditanyakan atau didiskusikan lebih dalam.",
+"Terakhir, saya kasih semacam 'contekan' istilah-istilah penting yang udah kita bahas hari ini, biar kalian gampang ingat dan bisa jadi referensi kalau lupa. Silakan di-screenshot slide ini ya, lumayan buat bahan diskusi sama teman-teman nanti!",
+"Nah, sekarang kita masuk ke contoh penerapan nyata: Smart Factory. Tapi sebelum itu, yuk kita mundur dulu sebentar lihat sejarahnya. Industri 1.0 itu era mesin uap, Industri 2.0 era listrik dan jalur perakitan massal, Industri 3.0 era komputer dan robot otomasi awal, dan sekarang kita di Industri 4.0 — era di mana mesin saling terhubung lewat internet dan bisa 'berpikir' sendiri berkat AI. Nah, Smart Factory itu wujud nyata dari Industri 4.0 ini.",
+"Bayangin pabrik yang mesin, sensor, dan sistemnya saling ngobrol satu sama lain dan bisa ambil keputusan sendiri secara real-time. Kalau pabrik biasa itu mobil manual, Smart Factory itu kayak mobil self-driving.",
+"Di dalam Smart Factory, AI berperan di banyak titik. Predictive maintenance memprediksi mesin bakal rusak sebelum benar-benar rusak. Computer vision mengecek kualitas produk lebih teliti dari mata manusia. Robot jadi lebih adaptif, ada 'kembaran virtual' pabrik buat simulasi namanya digital twin, dan AI juga bantu atur stok lewat optimasi rantai pasok.",
+"Tentu semua ini ada manfaat dan tantangannya. Manfaatnya jelas: efisiensi naik, downtime turun, kualitas lebih konsisten. Tapi tantangannya juga nyata: investasi awal besar, butuh skill baru buat pekerja, dan risiko keamanan siber naik karena semua saling terhubung. Yang penting diingat, transisi ini bertahap, dan manusia tetap pegang kendali di keputusan strategis.",
+"Jadi begitulah gambaran AI dari dasar sampai penerapannya di industri lewat Smart Factory. Intinya, AI bukan buat gantiin manusia di pabrik, tapi jadi alat yang bikin kita kerja lebih cerdas dan efisien. Terima kasih banyak, dan silakan kalau ada pertanyaan lanjutan!"
+];
+
+const slides = document.querySelectorAll('.slide');
+const dotsWrap = document.getElementById('dots');
+const slideNum = document.getElementById('slideNum');
+const notesText = document.getElementById('notesText');
+const notesPanel = document.getElementById('notesPanel');
+const notesToggle = document.getElementById('notesToggle');
+let current = 0;
+let notesOpen = false;
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
+  dotsWrap.appendChild(d);
+});
+const dots = document.querySelectorAll('.dot');
+
+function goTo(i){
+  if(i < 0 || i >= slides.length) return;
+  slides[current].classList.remove('active');
+  dots[current].classList.remove('active');
+  current = i;
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+  slideNum.textContent = String(current+1).padStart(2,'0') + ' / ' + slides.length;
+  notesText.textContent = notes[current];
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => goTo(current-1));
+document.getElementById('nextBtn').addEventListener('click', () => goTo(current+1));
+
+notesToggle.addEventListener('click', () => {
+  notesOpen = !notesOpen;
+  notesPanel.classList.toggle('open', notesOpen);
+  notesToggle.setAttribute('aria-pressed', String(notesOpen));
+});
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'ArrowRight' || e.key === ' ') { goTo(current+1); }
+  else if(e.key === 'ArrowLeft') { goTo(current-1); }
+  else if(e.key.toLowerCase() === 'n') { notesToggle.click(); }
+});
+
+goTo(0);
+</script>
+</body>
+</html>

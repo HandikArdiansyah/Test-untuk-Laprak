@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studi Kasus ReLU — Industri Ban (End-to-End)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#fff; --text:#172033; --muted:#5f6b7a;
+  --primary:#2563eb; --primary2:#1d4ed8; --accent:#7c3aed;
+  --success:#059669; --danger:#dc2626; --border:#dfe5ee;
+  --shadow:0 10px 30px rgba(20,35,60,.08);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+header{background:linear-gradient(135deg,#172554,#2563eb);color:white;padding:48px 24px 42px}
+.container{max-width:1180px;margin:auto;padding:0 20px}
+header h1{font-size:clamp(1.8rem,4.5vw,3rem);margin:8px 0}
+header p{max-width:860px;color:#dbeafe;font-size:1.05rem}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.badge{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);padding:7px 12px;border-radius:999px;font-size:.9rem}
+nav{position:sticky;top:0;z-index:20;background:white;border-bottom:1px solid var(--border);box-shadow:0 3px 15px rgba(0,0,0,.04)}
+.nav-inner{max-width:1180px;margin:auto;padding:10px 20px;display:flex;gap:8px;overflow:auto}
+nav a{white-space:nowrap;text-decoration:none;color:#334155;padding:8px 11px;border-radius:8px;font-size:.9rem}
+nav a:hover{background:#eff6ff;color:var(--primary)}
+section{padding:42px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.9rem;margin:0 0 12px}
+h3{margin-top:26px}
+.lead{font-size:1.05rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.callout{border-left:5px solid var(--primary);background:#eff6ff;padding:18px 20px;border-radius:10px;margin:20px 0}
+.warn{border-left-color:#f59e0b;background:#fffbeb}
+.success{border-left-color:var(--success);background:#ecfdf5}
+.danger{border-left-color:var(--danger);background:#fef2f2}
+.code{background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;overflow:auto;font-family:Consolas,monospace;font-size:.85rem;line-height:1.55;position:relative}
+.code .lang{position:absolute;top:8px;right:12px;font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em}
+.copy-btn{position:absolute;top:8px;right:12px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;padding:4px 10px;border-radius:6px;font-size:.75rem;cursor:pointer}
+.copy-btn:hover{background:#334155}
+.formula{font-family:Georgia,serif;font-size:1.15rem;background:#f8fafc;border:1px solid var(--border);padding:18px;border-radius:12px;text-align:center;margin:15px 0}
+.flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:25px 0}
+.node{background:white;border:2px solid #93c5fd;border-radius:12px;padding:14px 18px;text-align:center;min-width:125px;box-shadow:0 5px 15px rgba(0,0,0,.06)}
+.node.hidden{border-color:#c4b5fd}
+.node.output{border-color:#86efac}
+.node.data{border-color:#fbbf24;background:#fffbeb}
+.node.web{border-color:#f472b6;background:#fdf2f8}
+.arrow{font-size:1.7rem;color:#64748b}
+table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;margin-top:12px}
+th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:#eff6ff}
+.small{font-size:.9rem;color:var(--muted)}
+footer{background:#172033;color:#cbd5e1;padding:35px 20px;margin-top:30px}
+button.primary{background:var(--primary);color:white;border:0;padding:12px 18px;border-radius:9px;cursor:pointer;font-weight:600}
+button.primary:hover{background:var(--primary2)}
+input[type=range]{width:100%}
+.chart-wrap{background:white;border:1px solid var(--border);border-radius:16px;padding:20px;margin:18px 0;box-shadow:var(--shadow)}
+.chart-wrap h3{margin-top:0}
+canvas{max-height:320px}
+.metric{font-size:2rem;font-weight:700;font-family:Consolas,monospace}
+.metric.good{color:var(--success)}
+.metric.bad{color:var(--danger)}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600}
+.tag-ok{background:#ecfdf5;color:#065f46}
+.tag-warn{background:#fffbeb;color:#92400e}
+.file-tree{background:#0f172a;color:#e2e8f0;padding:20px;border-radius:12px;font-family:Consolas,monospace;font-size:.85rem;line-height:1.7;overflow:auto}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--primary);color:white;font-weight:700;margin-right:10px}
+@media(max-width:700px){header{padding:35px 18px}.container{padding:0 14px}}
+</style>
+</head>
+
+<body>
+<header>
+<div class="container">
+  <div class="badge">Deep Learning • Studi Kasus End-to-End</div>
+  <h1>ReLU di Industri Ban</h1>
+  <p>Dari Excel → PyTorch → Dashboard Web. Satu file HTML berisi penjelasan lengkap, kode Python, dan visualisasi hasil.</p>
+  <div class="badges">
+    <span class="badge">📊 Excel sebagai Sumber Data</span>
+    <span class="badge">🔥 PyTorch + ReLU</span>
+    <span class="badge">🌐 Dashboard Web</span>
+    <span class="badge">📖 Langkah demi Langkah</span>
+  </div>
+</div>
+</header>
+
+<nav>
+<div class="nav-inner">
+<a href="#gambaran">Gambaran</a>
+<a href="#struktur">Struktur Folder</a>
+<a href="#step1">1. Excel</a>
+<a href="#step2">2. Preprocessing</a>
+<a href="#step3">3. Model ReLU</a>
+<a href="#step4">4. Training</a>
+<a href="#step5">5. Evaluasi</a>
+<a href="#step6">6. Simpan JSON</a>
+<a href="#step7">7. Dashboard</a>
+<a href="#demo">Demo Live</a>
+<a href="#cara">Cara Menjalankan</a>
+</div>
+</nav>
+
+<main class="container">
+
+<!-- ============ GAMBARAN ============ -->
+<section id="gambaran">
+<h2>🎯 Gambaran Besar</h2>
+<p class="lead">Studi kasus ini meniru proyek ML nyata di industri: data dari spreadsheet, model dilatih dengan PyTorch, hasilnya ditampilkan di web dashboard.</p>
+
+<div class="flow">
+<div class="node data">📊 Excel<br><small>data_ban.xlsx</small></div>
+<div class="arrow">→</div>
+<div class="node">🐍 Python<br><small>pandas + sklearn</small></div>
+<div class="arrow">→</div>
+<div class="node hidden">🧠 PyTorch<br><small>MLP + ReLU</small></div>
+<div class="arrow">→</div>
+<div class="node output">📄 JSON<br><small>hasil_evaluasi.json</small></div>
+<div class="arrow">→</div>
+<div class="node web">🌐 Web<br><small>Dashboard</small></div>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>Skenario Industri</h3>
+<p>PT Ban Sejahtera punya <b>500 ban</b> yang sudah diuji fisik di lab. Setiap ban punya 4 parameter proses dan label kualitas (<b>Baik = 0, Perlu Perbaikan = 1</b>).</p>
+<p>Tujuan: bangun MLP yang bisa <b>memprediksi kualitas ban baru</b> dari parameter prosesnya — tanpa harus diuji fisik.</p>
+</div>
+<div class="card">
+<h3>Fitur Input</h3>
+<table>
+<tr><th>Fitur</th><th>Rentang</th></tr>
+<tr><td>suhu</td><td>140–180 °C</td></tr>
+<tr><td>tekanan</td><td>15–25 bar</td></tr>
+<tr><td>waktu_curing</td><td>8–15 menit</td></tr>
+<tr><td>rasio_karet</td><td>0.4–0.8</td></tr>
+</table>
+</div>
+<div class="card">
+<h3>Kenapa ReLU?</h3>
+<p>Aturan industri: ban bagus hanya jika suhu di rentang <b>ideal 150–165°C</b>. Ini pola <b>non-linear</b>.</p>
+<p>ReLU memungkinkan network "mematikan" neuron yang tidak relevan dan mempertahankan informasi penting.</p>
+</div>
+</div>
+</section>
+
+<!-- ============ STRUKTUR FOLDER ============ -->
+<section id="struktur">
+<h2>📁 Struktur Folder Proyek</h2>
+<p>Buat folder seperti ini di komputer Anda:</p>
+<div class="file-tree">
+proyek-ban/<br>
+│<br>
+├── data/<br>
+│   └── data_ban.xlsx              ← input dari Excel<br>
+│<br>
+├── 1_generate_excel.py            ← buat dataset contoh<br>
+├── 2_train_model.py               ← training PyTorch<br>
+│<br>
+├── model_ban.pth                  ← model tersimpan (dibuat otomatis)<br>
+├── hasil_evaluasi.json            ← output untuk web (dibuat otomatis)<br>
+│<br>
+└── web/<br>
+    └── dashboard.html             ← visualisasi (ada di bagian 7)
+</div>
+</section>
+
+<!-- ============ STEP 1 ============ -->
+<section id="step1">
+<h2><span class="step-num">1</span> Siapkan Data Excel</h2>
+<p>Langkah pertama: kita siapkan data contoh dalam bentuk Excel. Di proyek nyata, ini biasanya berasal dari sistem ERP atau hasil pengukuran lab.</p>
+
+<h3>Struktur kolom yang diharapkan</h3>
+<table>
+<tr><th>suhu</th><th>tekanan</th><th>waktu_curing</th><th>rasio_karet</th><th>kualitas</th></tr>
+<tr><td>155</td><td>20.5</td><td>11.2</td><td>0.65</td><td>0</td></tr>
+<tr><td>148</td><td>17.0</td><td>9.5</td><td>0.52</td><td>1</td></tr>
+<tr><td>162</td><td>22.1</td><td>12.8</td><td>0.71</td><td>0</td></tr>
+<tr><td>142</td><td>16.2</td><td>8.3</td><td>0.48</td><td>1</td></tr>
+</table>
+<p class="small"><b>kualitas:</b> 0 = Baik, 1 = Perlu Perbaikan</p>
+
+<h3>Script untuk generate Excel contoh</h3>
+<p>Simpan sebagai <code>1_generate_excel.py</code>:</p>
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre>import pandas as pd
+import numpy as np
+
+np.random.seed(42)
+n = 500
+
+# Generate 4 fitur acak
+suhu    = np.random.uniform(140, 180, n)
+tekanan = np.random.uniform(15, 25, n)
+waktu   = np.random.uniform(8, 15, n)
+rasio   = np.random.uniform(0.4, 0.8, n)
+
+# Aturan industri (non-linear):
+# Ban bagus jika suhu ideal 150-165 DAN tekanan cukup.
+suhu_ideal  = ((suhu &gt; 150) &amp; (suhu &lt; 165)).astype(float)
+tekanan_ok  = (tekanan &gt; 19).astype(float)
+skor        = suhu_ideal * 0.6 + tekanan_ok * 0.4 + np.random.normal(0, 0.1, n)
+kualitas    = (skor &lt; 0.6).astype(int)   # 1 = perlu perbaikan
+
+df = pd.DataFrame({
+    "suhu":         np.round(suhu, 1),
+    "tekanan":      np.round(tekanan, 2),
+    "waktu_curing": np.round(waktu, 2),
+    "rasio_karet":  np.round(rasio, 3),
+    "kualitas":     kualitas
+})
+
+df.to_excel("data/data_ban.xlsx", index=False)
+print(f"✅ Dataset tersimpan: {len(df)} baris")
+print(df.head())</pre>
+</div>
+
+<div class="callout">
+<b>Jalankan:</b>
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">pip install pandas numpy openpyxl
+python 1_generate_excel.py</pre>
+</div>
+</div>
+</section>
+
+<!-- ============ STEP 2 ============ -->
+<section id="step2">
+<h2><span class="step-num">2</span> Baca Excel &amp; Preprocessing</h2>
+<p>Data mentah tidak bisa langsung dilatih. Kita perlu <b>pisahkan fitur dan label</b>, <b>split train/test</b>, dan <b>normalisasi</b>.</p>
+
+<p>Simpan sebagai <code>2_train_model.py</code> (bagian atas):</p>
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre>import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import json
+
+# ==================================================
+# STEP 1 — BACA DATA DARI EXCEL
+# ==================================================
+print("📂 Membaca data dari Excel...")
+df = pd.read_excel("data/data_ban.xlsx")
+print(f"   Total baris: {len(df)}")
+
+# Pisahkan fitur (X) dan label (y)
+X = df[["suhu", "tekanan", "waktu_curing", "rasio_karet"]].values
+y = df["kualitas"].values.reshape(-1, 1)
+
+# ==================================================
+# STEP 2 — SPLIT DATA (TRAIN / TEST)
+# ==================================================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+print(f"✂️  Train: {len(X_train)} | Test: {len(X_test)}")
+
+# ==================================================
+# STEP 3 — NORMALISASI
+# ==================================================
+# Model neural network sensitif terhadap skala fitur.
+# Suhu (~150) vs rasio (~0.6) → skalanya beda jauh.
+# Normalisasi: (x - mean) / std
+scaler  = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test  = scaler.transform(X_test)   # pakai mean/std dari train!
+
+# Konversi ke tensor PyTorch
+X_train_t = torch.tensor(X_train, dtype=torch.float32)
+y_train_t = torch.tensor(y_train, dtype=torch.float32)
+X_test_t  = torch.tensor(X_test,  dtype=torch.float32)
+y_test_t  = torch.tensor(y_test,  dtype=torch.float32)
+
+print("✅ Preprocessing selesai.")</pre>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>Kenapa split train/test?</h3>
+<p>Untuk mengukur performa model di <b>data yang belum pernah dilihat</b>. Tanpa split, model bisa "menghafal" data dan terlihat sempurna padahal tidak berguna.</p>
+</div>
+<div class="card">
+<h3>Kenapa normalisasi?</h3>
+<p>Tanpa normalisasi, fitur berskala besar (suhu ~150) akan mendominasi fitur berskala kecil (rasio ~0.6). Training jadi tidak seimbang.</p>
+</div>
+<div class="card">
+<h3>Kenapa pakai <code>fit_transform</code> di train saja?</h3>
+<p>Test set harus diperlakukan sebagai data "baru" — jangan sampai model "mengintip" statistik dari test set. Jadi kita pakai mean/std dari train.</p>
+</div>
+</div>
+</section>
+
+<!-- ============ STEP 3 ============ -->
+<section id="step3">
+<h2><span class="step-num">3</span> Bangun Model dengan ReLU</h2>
+<p>Inilah inti studi kasus: <b>ReLU di hidden layer</b> memungkinkan network mempelajari pola non-linear dari industri ban.</p>
+
+<p>Lanjutkan di <code>2_train_model.py</code>:</p>
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre># ==================================================
+# STEP 4 — ARSITEKTUR MLP DENGAN RELU
+# ==================================================
+class BanMLP(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(4, 16),        # 4 fitur → 16 neuron
+            nn.ReLU(),               # ← KUNCI: hidden pakai ReLU
+            nn.Linear(16, 8),        # 16 → 8 neuron
+            nn.ReLU(),               # ← lagi
+            nn.Linear(8, 1),         # 8 → 1 output
+            nn.Sigmoid()             # output biner (0/1)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+model = BanMLP()
+print("\n🏗️  Arsitektur model:")
+print(model)
+
+total_params = sum(p.numel() for p in model.parameters())
+print(f"   Total parameter: {total_params}")</pre>
+</div>
+
+<div class="callout success">
+<b>Kenapa ReLU di hidden layer?</b>
+<ul>
+<li><b>Sifat data:</b> ban bagus hanya jika suhu di rentang ideal (150–165) → pola non-linear.</li>
+<li><b>Gradient:</b> ReLU gradient = 1 (untuk x &gt; 0) → error mengalir utuh saat backprop.</li>
+<li><b>Efisien:</b> ReLU hanya butuh operasi max(0, x) — cepat.</li>
+</ul>
+<b>Kenapa Sigmoid di output?</b> Karena output kita biner (0/1). Sigmoid memetakan angka apa pun ke 0–1.
+</div>
+
+<div class="flow">
+<div class="node">4 fitur<br><small>input</small></div>
+<div class="arrow">→</div>
+<div class="node hidden">16 neuron<br><small>ReLU</small></div>
+<div class="arrow">→</div>
+<div class="node hidden">8 neuron<br><small>ReLU</small></div>
+<div class="arrow">→</div>
+<div class="node output">1 neuron<br><small>Sigmoid</small></div>
+</div>
+</section>
+
+<!-- ============ STEP 4 ============ -->
+<section id="step4">
+<h2><span class="step-num">4</span> Training — Loss &amp; Backpropagation</h2>
+<p>Di sinilah network <b>belajar</b>: menghitung loss, mengalirkan error mundur (backpropagation), dan memperbarui weight.</p>
+
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre># ==================================================
+# STEP 5 — LOSS, OPTIMIZER, TRAINING LOOP
+# ==================================================
+loss_fn   = nn.BCELoss()                                  # Binary Cross-Entropy
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+epochs         = 300
+loss_history   = []
+acc_history    = []
+
+print("\n🚀 Mulai training...")
+for epoch in range(epochs):
+    # ---- FORWARD ----
+    y_pred = model(X_train_t)
+    loss   = loss_fn(y_pred, y_train_t)
+
+    # ---- BACKWARD ----
+    optimizer.zero_grad()      # hapus gradient dari iterasi sebelumnya
+    loss.backward()            # hitung gradient (backpropagation)
+    optimizer.step()           # update weight
+
+    # ---- CATAT HISTORY ----
+    loss_history.append(loss.item())
+    with torch.no_grad():
+        pred_label = (y_pred &gt; 0.5).float()
+        acc        = (pred_label == y_train_t).float().mean().item()
+        acc_history.append(acc)
+
+    if (epoch + 1) % 30 == 0:
+        print(f"Epoch {epoch+1:3d} | Loss: {loss.item():.4f} | Acc: {acc:.4f}")
+
+print("✅ Training selesai.")
+torch.save(model.state_dict(), "model_ban.pth")</pre>
+</div>
+
+<h3>Penjelasan tiap baris kunci</h3>
+<table>
+<tr><th>Baris</th><th>Fungsi</th></tr>
+<tr><td><code>loss_fn = nn.BCELoss()</code></td><td>Ukur seberapa salah prediksi. BCE cocok untuk klasifikasi biner.</td></tr>
+<tr><td><code>torch.optim.Adam(...)</code></td><td>Optimizer yang mengatur cara update weight (versi lebih pintar dari SGD).</td></tr>
+<tr><td><code>model(X_train_t)</code></td><td>Forward propagation: input → prediksi.</td></tr>
+<tr><td><code>loss.backward()</code></td><td>Backpropagation: hitung gradient tiap weight.</td></tr>
+<tr><td><code>optimizer.step()</code></td><td>Update weight: w ← w − η · ∂L/∂w.</td></tr>
+<tr><td><code>optimizer.zero_grad()</code></td><td>Hapus gradient lama supaya tidak menumpuk.</td></tr>
+</table>
+
+<div class="callout">
+<b>Output yang diharapkan (contoh):</b>
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">Epoch  30 | Loss: 0.3821 | Acc: 0.8500
+Epoch  60 | Loss: 0.2145 | Acc: 0.9150
+Epoch  90 | Loss: 0.1287 | Acc: 0.9475
+Epoch 120 | Loss: 0.0821 | Acc: 0.9625
+Epoch 150 | Loss: 0.0554 | Acc: 0.9750
+Epoch 180 | Loss: 0.0398 | Acc: 0.9800
+Epoch 210 | Loss: 0.0301 | Acc: 0.9825
+Epoch 240 | Loss: 0.0238 | Acc: 0.9875
+Epoch 270 | Loss: 0.0195 | Acc: 0.9900
+Epoch 300 | Loss: 0.0164 | Acc: 0.9925</pre>
+</div>
+</div>
+</section>
+
+<!-- ============ STEP 5 ============ -->
+<section id="step5">
+<h2><span class="step-num">5</span> Evaluasi di Test Set</h2>
+<p>Setelah training, kita uji model di <b>data yang belum pernah dilihat</b>.</p>
+
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre># ==================================================
+# STEP 6 — EVALUASI DI TEST SET
+# ==================================================
+model.eval()
+with torch.no_grad():
+    y_test_pred  = model(X_test_t)
+    y_test_label = (y_test_pred &gt; 0.5).float()
+    test_acc     = (y_test_label == y_test_t).float().mean().item()
+
+# Confusion matrix manual
+tp = ((y_test_label == 1) &amp; (y_test_t == 1)).sum().item()
+tn = ((y_test_label == 0) &amp; (y_test_t == 0)).sum().item()
+fp = ((y_test_label == 1) &amp; (y_test_t == 0)).sum().item()
+fn = ((y_test_label == 0) &amp; (y_test_t == 1)).sum().item()
+
+precision = tp / (tp + fp + 1e-8)
+recall    = tp / (tp + fn + 1e-8)
+f1        = 2 * precision * recall / (precision + recall + 1e-8)
+
+print(f"\n📊 Evaluasi Test Set:")
+print(f"   Akurasi  : {test_acc:.4f}")
+print(f"   Precision: {precision:.4f}")
+print(f"   Recall   : {recall:.4f}")
+print(f"   F1 Score : {f1:.4f}")
+print(f"   Confusion Matrix: TP={tp} TN={tn} FP={fp} FN={fn}")</pre>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>Akurasi</h3>
+<p>Persentase prediksi yang benar dari seluruh data test.</p>
+</div>
+<div class="card">
+<h3>Precision</h3>
+<p>Dari yang diprediksi "Perlu Perbaikan", berapa persen yang benar-benar perlu perbaikan?</p>
+</div>
+<div class="card">
+<h3>Recall</h3>
+<p>Dari semua ban yang perlu perbaikan, berapa persen yang berhasil dideteksi?</p>
+</div>
+<div class="card">
+<h3>F1 Score</h3>
+<p>Rata-rata harmonis precision dan recall. Berguna saat kelas tidak seimbang.</p>
+</div>
+</div>
+
+<div class="callout warn">
+<b>Catatan industri:</b> untuk kasus cacat ban, <b>recall</b> biasanya lebih penting dari precision. Kenapa? Karena <i>false negative</i> (ban cacat lolos QC) jauh lebih mahal daripada <i>false positive</i> (ban bagus ditahan sebentar untuk inspeksi ulang).
+</div>
+</section>
+
+<!-- ============ STEP 6 ============ -->
+<section id="step6">
+<h2><span class="step-num">6</span> Simpan Hasil ke JSON</h2>
+<p>JSON adalah "jembatan" antara Python dan web. Semua angka yang dibutuhkan dashboard ditulis ke satu file.</p>
+
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">python</span>
+<pre># ==================================================
+# STEP 7 — SIMPAN HASIL UNTUK WEB
+# ==================================================
+# Ambil 50 sampel test untuk scatter plot di web
+sample_n    = min(50, len(X_test))
+sample_true = y_test_t[:sample_n].flatten().tolist()
+sample_pred = y_test_pred[:sample_n].flatten().tolist()
+
+hasil = {
+    "arsitektur":       "4 → 16 (ReLU) → 8 (ReLU) → 1 (Sigmoid)",
+    "total_parameter":  total_params,
+    "epochs":           epochs,
+    "loss_history":     loss_history,
+    "acc_history":      acc_history,
+    "test_accuracy":    round(test_acc, 4),
+    "precision":        round(precision, 4),
+    "recall":           round(recall, 4),
+    "f1":               round(f1, 4),
+    "confusion":        {"TP": tp, "TN": tn, "FP": fp, "FN": fn},
+    "scatter": {
+        "true": sample_true,
+        "pred": [round(p, 4) for p in sample_pred]
+    }
+}
+
+with open("hasil_evaluasi.json", "w") as f:
+    json.dump(hasil, f, indent=2)
+
+print("\n💾 Hasil disimpan ke hasil_evaluasi.json")
+print("   Siap untuk visualisasi web.")</pre>
+</div>
+
+<div class="callout">
+<b>Struktur JSON yang dihasilkan:</b>
+<div class="code" style="margin-top:10px;background:#1e293b;font-size:.8rem">
+<pre style="margin:0">{
+  "arsitektur": "4 → 16 (ReLU) → 8 (ReLU) → 1 (Sigmoid)",
+  "total_parameter": 249,
+  "epochs": 300,
+  "loss_history": [0.693, 0.612, ...],
+  "acc_history":  [0.52, 0.58, ...],
+  "test_accuracy": 0.99,
+  "precision": 0.98,
+  "recall": 0.99,
+  "f1": 0.985,
+  "confusion": {"TP": 47, "TN": 52, "FP": 1, "FN": 0},
+  "scatter": {...}
+}</pre>
+</div>
+</div>
+</section>
+
+<!-- ============ STEP 7 ============ -->
+<section id="step7">
+<h2><span class="step-num">7</span> Dashboard Web</h2>
+<p>File <code>web/dashboard.html</code> membaca <code>hasil_evaluasi.json</code> dan menampilkannya sebagai grafik interaktif.</p>
+
+<div class="code">
+<button class="copy-btn" onclick="copyCode(this)">Salin</button>
+<span class="lang">html</span>
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="id"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;title&gt;Dashboard Model Ban&lt;/title&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;
+&lt;style&gt;
+body{font-family:Inter,sans-serif;background:#f5f7fb;margin:0;color:#172033}
+header{background:linear-gradient(135deg,#172554,#2563eb);color:white;padding:36px 24px}
+.container{max-width:1180px;margin:auto;padding:0 20px}
+h1{margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin:26px 0}
+.card{background:white;border:1px solid #dfe5ee;border-radius:14px;padding:20px;
+      box-shadow:0 6px 20px rgba(20,35,60,.06)}
+.card h3{margin:0 0 8px;font-size:.95rem;color:#5f6b7a}
+.metric{font-size:2.2rem;font-weight:700;font-family:Consolas,monospace;color:#059669}
+.chart-wrap{background:white;border:1px solid #dfe5ee;border-radius:14px;
+            padding:20px;margin-bottom:22px}
+canvas{max-height:320px}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;header&gt;
+  &lt;div class="container"&gt;
+    &lt;h1&gt;Dashboard Model Klasifikasi Ban&lt;/h1&gt;
+    &lt;p&gt;MLP dengan ReLU di hidden layer&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/header&gt;
+
+&lt;div class="container"&gt;
+  &lt;div class="grid"&gt;
+    &lt;div class="card"&gt;&lt;h3&gt;Akurasi&lt;/h3&gt;&lt;div class="metric" id="mAcc"&gt;—&lt;/div&gt;&lt;/div&gt;
+    &lt;div class="card"&gt;&lt;h3&gt;Precision&lt;/h3&gt;&lt;div class="metric" id="mPrec"&gt;—&lt;/div&gt;&lt;/div&gt;
+    &lt;div class="card"&gt;&lt;h3&gt;Recall&lt;/h3&gt;&lt;div class="metric" id="mRec"&gt;—&lt;/div&gt;&lt;/div&gt;
+    &lt;div class="card"&gt;&lt;h3&gt;F1 Score&lt;/h3&gt;&lt;div class="metric" id="mF1"&gt;—&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="chart-wrap"&gt;
+    &lt;h3&gt;Kurva Training — Loss&lt;/h3&gt;
+    &lt;canvas id="lossChart"&gt;&lt;/canvas&gt;
+  &lt;/div&gt;
+
+  &lt;div class="chart-wrap"&gt;
+    &lt;h3&gt;Kurva Training — Akurasi&lt;/h3&gt;
+    &lt;canvas id="accChart"&gt;&lt;/canvas&gt;
+  &lt;/div&gt;
+
+  &lt;div class="chart-wrap"&gt;
+    &lt;h3&gt;Prediksi vs Aktual&lt;/h3&gt;
+    &lt;canvas id="scatterChart"&gt;&lt;/canvas&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+fetch('../hasil_evaluasi.json')
+  .then(r =&gt; r.json())
+  .then(d =&gt; {
+    document.getElementById('mAcc').textContent  = d.test_accuracy;
+    document.getElementById('mPrec').textContent = d.precision;
+    document.getElementById('mRec').textContent  = d.recall;
+    document.getElementById('mF1').textContent   = d.f1;
+
+    new Chart(document.getElementById('lossChart'), {
+      type:'line',
+      data:{ labels: d.loss_history.map((_,i)=&gt;i+1),
+             datasets:[{label:'Loss',data:d.loss_history,
+                        borderColor:'#dc2626',tension:.3,pointRadius:0}]},
+      options:{plugins:{legend:{display:false}}}
+    });
+
+    new Chart(document.getElementById('accChart'), {
+      type:'line',
+      data:{ labels: d.acc_history.map((_,i)=&gt;i+1),
+             datasets:[{label:'Akurasi',data:d.acc_history,
+                        borderColor:'#059669',tension:.3,pointRadius:0}]},
+      options:{plugins:{legend:{display:false}}}
+    });
+
+    new Chart(document.getElementById('scatterChart'), {
+      type:'scatter',
+      data:{ datasets:[{
+        label:'Sampel',
+        data: d.scatter.true.map((t,i)=&gt;({x:i+1,y:d.scatter.pred[i],t})),
+        pointRadius:6,
+        pointBackgroundColor: d.scatter.true.map(t =&gt; t===1?'#dc2626':'#059669')
+      }]}
+    });
+  })
+  .catch(e =&gt; document.body.insertAdjacentHTML('beforeend',
+    `&lt;p style="padding:20px;color:#dc2626"&gt;Gagal baca JSON: ${e}&lt;/p&gt;`));
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</div>
+
+<div class="callout warn">
+<b>Kenapa harus server lokal?</b><br>
+Browser memblokir <code>fetch()</code> ke file lokal (<code>file://</code>) karena alasan keamanan (CORS). Jalankan server lokal dengan:
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">cd proyek-ban
+python -m http.server 8000</pre>
+</div>
+Lalu buka <code>http://localhost:8000/web/dashboard.html</code>.
+</div>
+</section>
+
+<!-- ============ DEMO LIVE ============ -->
+<section id="demo">
+<h2>🎬 Demo Live — Simulasi Dashboard</h2>
+<p>Karena file ini berjalan di browser tanpa Python, di bawah ini saya tampilkan <b>simulasi dashboard</b> dengan data yang di-generate langsung di JavaScript. Ini untuk menunjukkan bagaimana hasilnya akan terlihat.</p>
+
+<div class="grid">
+<div class="card"><h3>Akurasi</h3><div class="metric good" id="demoAcc">—</div></div>
+<div class="card"><h3>Precision</h3><div class="metric good" id="demoPrec">—</div></div>
+<div class="card"><h3>Recall</h3><div class="metric good" id="demoRec">—</div></div>
+<div class="card"><h3>F1 Score</h3><div class="metric good" id="demoF1">—</div></div>
+</div>
+
+<div class="chart-wrap">
+<h3>Kurva Training — Loss (simulasi ReLU)</h3>
+<canvas id="demoLossChart"></canvas>
+</div>
+
+<div class="chart-wrap">
+<h3>Kurva Training — Akurasi (simulasi ReLU)</h3>
+<canvas id="demoAccChart"></canvas>
+</div>
+
+<div class="chart-wrap">
+<h3>Confusion Matrix (simulasi)</h3>
+<div class="grid" style="margin:0">
+  <div class="card"><h3>True Positive</h3><div class="metric good" id="demoTP">—</div></div>
+  <div class="card"><h3>True Negative</h3><div class="metric good" id="demoTN">—</div></div>
+  <div class="card"><h3>False Positive</h3><div class="metric bad" id="demoFP">—</div></div>
+  <div class="card"><h3>False Negative</h3><div class="metric bad" id="demoFN">—</div></div>
+</div>
+</div>
+
+<div class="chart-wrap">
+<h3>Prediksi vs Aktual (50 sampel)</h3>
+<canvas id="demoScatterChart"></canvas>
+</div>
+</section>
+
+<!-- ============ CARA MENJALANKAN ============ -->
+<section id="cara">
+<h2>🚀 Cara Menjalankan Semua</h2>
+
+<div class="card">
+<h3>Langkah lengkap</h3>
+<ol>
+<li><b>Buat folder</b> <code>proyek-ban/</code> dengan sub-folder <code>data/</code> dan <code>web/</code>.</li>
+<li><b>Salin</b> <code>1_generate_excel.py</code> dan <code>2_train_model.py</code> ke folder utama.</li>
+<li><b>Salin</b> kode HTML dari bagian 7 ke <code>web/dashboard.html</code>.</li>
+<li><b>Install library</b>:
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">pip install pandas numpy openpyxl torch scikit-learn</pre>
+</div>
+</li>
+<li><b>Generate dataset Excel</b>:
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">python 1_generate_excel.py</pre>
+</div>
+</li>
+<li><b>Train model</b>:
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">python 2_train_model.py</pre>
+</div>
+Akan muncul <code>model_ban.pth</code> dan <code>hasil_evaluasi.json</code>.
+</li>
+<li><b>Jalankan server lokal</b>:
+<div class="code" style="margin-top:10px;background:#1e293b">
+<pre style="margin:0">python -m http.server 8000</pre>
+</div>
+</li>
+<li><b>Buka browser</b>: <code>http://localhost:8000/web/dashboard.html</code></li>
+</ol>
+</div>
+
+<div class="callout success">
+<b>Setelah semua jalan, Anda punya:</b>
+<ul>
+<li>Dataset Excel (<code>data_ban.xlsx</code>)</li>
+<li>Model PyTorch tersimpan (<code>model_ban.pth</code>)</li>
+<li>Hasil evaluasi JSON (<code>hasil_evaluasi.json</code>)</li>
+<li>Dashboard web interaktif dengan 4 grafik</li>
+</ul>
+Inilah alur kerja end-to-end yang umum di industri.
+</div>
+
+<div class="callout warn">
+<b>Tips:</b> kalau Anda ingin membandingkan <b>ReLU vs Sigmoid</b>, cukup ubah <code>nn.ReLU()</code> menjadi <code>nn.Sigmoid()</code> di <code>2_train_model.py</code>, jalankan ulang, dan lihat perbedaan kurva loss-nya. ReLU akan turun jauh lebih cepat.
+</div>
+</section>
+
+<!-- ============ RINGKASAN ============ -->
+<section>
+<h2>📋 Ringkasan Alur</h2>
+<table>
+<tr><th>Step</th><th>Aksi</th><th>Output</th></tr>
+<tr><td>1</td><td>Generate dataset dari Excel</td><td><code>data_ban.xlsx</code></td></tr>
+<tr><td>2</td><td>Baca + split + normalisasi</td><td>Tensor PyTorch siap training</td></tr>
+<tr><td>3</td><td>Bangun MLP dengan ReLU</td><td>Model 4→16→8→1</td></tr>
+<tr><td>4</td><td>Training 300 epoch</td><td><code>model_ban.pth</code></td></tr>
+<tr><td>5</td><td>Evaluasi test set</td><td>Akurasi, precision, recall, F1</td></tr>
+<tr><td>6</td><td>Simpan ke JSON</td><td><code>hasil_evaluasi.json</code></td></tr>
+<tr><td>7</td><td>Baca JSON di dashboard web</td><td>Grafik interaktif di browser</td></tr>
+</table>
+
+<div class="callout success">
+<b>Pelajaran utama:</b><br>
+ReLU di hidden layer bukan sekadar pilihan default. Ia adalah alasan <b>network dalam bisa benar-benar belajar</b>. Tanpa ReLU, gradient menipis saat backpropagation, dan layer awal nyaris tidak terlatih. Dengan ReLU, error mengalir utuh dan network belajar pola non-linear seperti "suhu ideal ban".
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="container">
+<b>Studi Kasus ReLU — Industri Ban</b>
+<p>Dari Excel → PyTorch → Web Dashboard. Semua dalam satu file HTML.</p>
+</div>
+</footer>
+
+<script>
+/* ============ FUNGSI COPY KODE ============ */
+function copyCode(btn){
+  const code = btn.parentElement.querySelector('pre').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ Tersalin';
+    setTimeout(() => btn.textContent = 'Salin', 1500);
+  });
+}
+
+/* ============ DEMO LIVE — SIMULASI HASIL ============ */
+// Karena browser tidak bisa jalankan PyTorch, kita simulasikan
+// kurva loss yang realistis untuk model dengan ReLU.
+
+// Generate kurva loss yang realistis (turun cepat di awal, lalu mendatar)
+function genLossCurve(epochs, finalLoss){
+  const arr = [];
+  for(let i=0; i<epochs; i++){
+    // Kurva eksponensial menurun
+    const t = i / epochs;
+    const val = 0.693 * Math.exp(-4 * t) + finalLoss * (1 - Math.exp(-4 * t));
+    // Tambah noise kecil di awal
+    const noise = i < 50 ? (Math.random() - 0.5) * 0.05 : 0;
+    arr.push(Math.max(0.01, val + noise));
+  }
+  return arr;
+}
+
+function genAccCurve(epochs, finalAcc){
+  const arr = [];
+  for(let i=0; i<epochs; i++){
+    const t = i / epochs;
+    const val = 0.5 + (finalAcc - 0.5) * (1 - Math.exp(-4 * t));
+    const noise = i < 50 ? (Math.random() - 0.5) * 0.03 : 0;
+    arr.push(Math.min(1, Math.max(0, val + noise)));
+  }
+  return arr;
+}
+
+const demoLoss  = genLossCurve(300, 0.016);
+const demoAcc   = genAccCurve(300, 0.99);
+
+// Isi metrik
+document.getElementById('demoAcc').textContent  = '0.9900';
+document.getElementById('demoPrec').textContent = '0.9850';
+document.getElementById('demoRec').textContent  = '0.9900';
+document.getElementById('demoF1').textContent   = '0.9875';
+document.getElementById('demoTP').textContent   = '47';
+document.getElementById('demoTN').textContent   = '52';
+document.getElementById('demoFP').textContent   = '1';
+document.getElementById('demoFN').textContent   = '0';
+
+// Chart 1 — Loss
+new Chart(document.getElementById('demoLossChart'), {
+  type: 'line',
+  data: {
+    labels: demoLoss.map((_,i)=>i+1),
+    datasets: [{
+      label: 'Loss',
+      data: demoLoss,
+      borderColor: '#dc2626',
+      backgroundColor: 'rgba(220,38,38,0.08)',
+      tension: 0.3, fill: true, pointRadius: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 'Epoch' } },
+      y: { title: { display: true, text: 'Loss' } }
+    }
+  }
+});
+
+// Chart 2 — Akurasi
+new Chart(document.getElementById('demoAccChart'), {
+  type: 'line',
+  data: {
+    labels: demoAcc.map((_,i)=>i+1),
+    datasets: [{
+      label: 'Akurasi',
+      data: demoAcc,
+      borderColor: '#059669',
+      backgroundColor: 'rgba(5,150,105,0.08)',
+      tension: 0.3, fill: true, pointRadius: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 'Epoch' } },
+      y: { title: { display: true, text: 'Akurasi' }, min: 0, max: 1 }
+    }
+  }
+});
+
+// Chart 3 — Scatter
+const scatterPoints = [];
+for(let i=0; i<50; i++){
+  const trueLabel = Math.random() < 0.5 ? 0 : 1;
+  const pred = trueLabel === 1
+    ? 0.7 + Math.random() * 0.3   // prediksi untuk kelas 1 → tinggi
+    : 0.0 + Math.random() * 0.3;  // prediksi untuk kelas 0 → rendah
+  scatterPoints.push({x: i+1, y: pred, t: trueLabel});
+}
+
+new Chart(document.getElementById('demoScatterChart'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      {
+        label: 'Sampel test',
+        data: scatterPoints,
+        pointRadius: 6,
+        pointBackgroundColor: scatterPoints.map(p =>
+          p.t === 1 ? '#dc2626' : '#059669'
+        )
+      },
+      {
+        label: 'Threshold 0.5',
+        data: [{x:1,y:0.5},{x:50,y:0.5}],
+        borderColor: '#94a3b8',
+        borderDash: [6,4],
+        borderWidth: 2,
+        pointRadius: 0,
+        showLine: true,
+        fill: false
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      x: { title: { display: true, text: 'Sampel ke-' } },
+      y: { title: { display: true, text: 'Skor prediksi' }, min: 0, max: 1 }
+    },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if(ctx.datasetIndex === 1) return 'Threshold = 0.5';
+            return `Prediksi: ${ctx.raw.y.toFixed(2)} | Aktual: ${ctx.raw.t === 1 ? 'Perlu Perbaikan' : 'Baik'}`;
+          }
+        }
+      }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

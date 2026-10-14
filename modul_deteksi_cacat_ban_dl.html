@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modul Praktik: Deteksi Cacat Ban dengan Deep Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15181b;
+    --surface:#1d2125;
+    --surface-2:#242830;
+    --line:#33383f;
+    --text:#e9e6df;
+    --text-dim:#a6aab0;
+    --amber:#e8a33d;
+    --amber-dim:#8a6326;
+    --steel:#5b9aad;
+    --code-bg:#0e1012;
+    --good:#7fae6a;
+    --bad:#c0654f;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif;
+    line-height:1.65;
+    font-size:16px;
+  }
+  a{color:var(--steel);}
+  code, pre{font-family:'IBM Plex Mono',monospace;}
+
+  /* Layout */
+  .shell{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    min-height:100vh;
+  }
+  nav.toc{
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:32px 20px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+  }
+  nav.toc .brand{
+    font-size:13px;
+    letter-spacing:.04em;
+    color:var(--amber);
+    margin-bottom:4px;
+  }
+  nav.toc h1{
+    font-size:19px;
+    margin:0 0 24px 0;
+    line-height:1.3;
+    color:var(--text);
+  }
+  nav.toc ol{
+    list-style:none;
+    padding:0;
+    margin:0;
+    counter-reset:section;
+  }
+  nav.toc li{
+    counter-increment:section;
+    margin-bottom:2px;
+  }
+  nav.toc li a{
+    display:block;
+    text-decoration:none;
+    color:var(--text-dim);
+    font-size:14px;
+    padding:7px 10px 7px 0;
+    border-left:2px solid transparent;
+    padding-left:12px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  nav.toc li a:before{
+    content:counter(section,decimal-leading-zero) "  ";
+    color:var(--amber-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+  }
+  nav.toc li a:hover{
+    color:var(--text);
+    border-left-color:var(--amber);
+  }
+  nav.toc .sub{margin-left:14px;}
+  nav.toc .sub a:before{content:"– ";}
+
+  main{
+    padding:56px 64px 120px 64px;
+    max-width:880px;
+  }
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr;}
+    nav.toc{position:relative;height:auto;top:auto;}
+    main{padding:32px 22px 90px 22px;}
+  }
+
+  .kicker{
+    color:var(--amber);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.02em;
+    margin-bottom:10px;
+  }
+  header.hero h1{
+    font-size:38px;
+    line-height:1.15;
+    margin:0 0 18px 0;
+    max-width:14ch;
+  }
+  header.hero p{
+    color:var(--text-dim);
+    font-size:17px;
+    max-width:62ch;
+  }
+  header.hero{
+    margin-bottom:56px;
+    padding-bottom:40px;
+    border-bottom:1px solid var(--line);
+  }
+
+  section{margin-bottom:64px;scroll-margin-top:24px;}
+  section h2{
+    font-size:26px;
+    margin:0 0 6px 0;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  section h2 .num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--amber-dim);
+    font-size:16px;
+  }
+  section h3{
+    font-size:19px;
+    margin:34px 0 10px 0;
+    color:var(--text);
+  }
+  section h4{
+    font-size:16px;
+    margin:22px 0 8px 0;
+    color:var(--steel);
+  }
+  p{max-width:74ch;}
+  ul,ol{max-width:74ch;padding-left:22px;}
+  li{margin-bottom:6px;}
+
+  .lede{color:var(--text-dim);max-width:70ch;margin-top:2px;margin-bottom:28px;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:20px 24px;
+    margin:18px 0;
+  }
+  .card.formula{
+    border-left:3px solid var(--amber);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    overflow-x:auto;
+  }
+  .card.note{
+    border-left:3px solid var(--steel);
+  }
+  .card.note .label{
+    color:var(--steel);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.03em;
+    display:block;
+    margin-bottom:6px;
+  }
+
+  table{
+    border-collapse:collapse;
+    width:100%;
+    margin:18px 0;
+    font-size:14.5px;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:9px 12px;
+    text-align:left;
+  }
+  th{
+    background:var(--surface-2);
+    color:var(--amber);
+    font-weight:600;
+    font-size:13px;
+  }
+  tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+
+  pre{
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px 20px;
+    overflow-x:auto;
+    font-size:13.5px;
+    line-height:1.6;
+    margin:16px 0;
+  }
+  pre .fname{
+    display:block;
+    color:var(--text-dim);
+    font-size:12px;
+    margin-bottom:10px;
+    letter-spacing:.02em;
+  }
+  code.inline{
+    background:var(--surface-2);
+    padding:1px 6px;
+    border-radius:4px;
+    font-size:.9em;
+    color:var(--amber);
+  }
+  .kw{color:#c586c0;}
+  .fn{color:#dcdcaa;}
+  .str{color:#ce9178;}
+  .cm{color:#6a9955;}
+  .nb{color:#b5cea8;}
+
+  .steps{
+    counter-reset:step;
+    padding:0;
+    list-style:none;
+    margin:20px 0;
+  }
+  .steps li{
+    counter-increment:step;
+    position:relative;
+    padding-left:44px;
+    margin-bottom:18px;
+  }
+  .steps li:before{
+    content:counter(step);
+    position:absolute;
+    left:0;top:0;
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--surface-2);
+    border:1px solid var(--amber-dim);
+    color:var(--amber);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .steps li b{color:var(--text);}
+
+  .diagram{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:26px;
+    margin:20px 0;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    overflow-x:auto;
+    white-space:pre;
+  }
+
+  .badge{
+    display:inline-block;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:12px;
+    padding:3px 9px;
+    border-radius:20px;
+    margin-right:6px;
+  }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding-top:24px;
+    color:var(--text-dim);
+    font-size:13px;
+  }
+
+  .divider{
+    height:1px;
+    background:var(--line);
+    margin:48px 0;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc">
+  <div class="brand">MODUL PRAKTIK</div>
+  <h1>Deteksi Cacat Ban dengan Deep Learning</h1>
+  <ol>
+    <li><a href="#teori">Teori Dasar Deep Learning</a>
+      <ol class="sub" style="list-style:none;padding:0;">
+        <li><a href="#neuron">Neuron buatan</a></li>
+        <li><a href="#bobot-bias">Bobot &amp; bias</a></li>
+        <li><a href="#aktivasi">Fungsi aktivasi</a></li>
+        <li><a href="#forward">Forward propagation</a></li>
+        <li><a href="#loss">Fungsi loss</a></li>
+        <li><a href="#backprop">Backpropagation</a></li>
+        <li><a href="#lr-epoch">Learning rate &amp; epoch</a></li>
+        <li><a href="#mlp">Dari neuron ke jaringan</a></li>
+        <li><a href="#cnn">Sekilas CNN untuk citra</a></li>
+      </ol>
+    </li>
+    <li><a href="#praktik1">Neuron Manual (1 Data)</a></li>
+    <li><a href="#praktik2">Latih dari Data Excel</a></li>
+    <li><a href="#praktik3">PyTorch: CNN Deteksi Cacat</a></li>
+    <li><a href="#penutup">Ringkasan &amp; Langkah Lanjut</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">DEEP LEARNING · QUALITY INSPECTION</div>
+  <h1>Deteksi Cacat Ban dengan Deep Learning</h1>
+  <p>Modul ini menuntun Anda dari <b>konsep matematis paling dasar</b> sebuah neuron, sampai membangun model <b>Convolutional Neural Network</b> dengan PyTorch untuk mengklasifikasikan ban yang cacat dan yang baik. Disusun bertahap: teori → kode manual tanpa library → kode dengan data Excel → kode dengan PyTorch.</p>
+</header>
+
+<!-- ============================================================ -->
+<section id="teori">
+  <h2><span class="num">01</span> Teori Dasar Deep Learning</h2>
+  <p class="lede">Sebelum menulis satu baris kode pun, penting memahami apa yang sebenarnya dihitung oleh sebuah model deep learning. Semua istilah di bawah ini akan langsung dipakai pada praktik koding di bagian selanjutnya.</p>
+
+  <h3 id="neuron">1.1 Apa itu Neuron (Buatan)?</h3>
+  <p>Neuron buatan adalah unit hitung terkecil dalam jaringan saraf tiruan. Ia meniru cara kerja neuron biologis secara sangat sederhana: menerima beberapa <b>input</b> (misalnya fitur-fitur dari citra permukaan ban seperti tingkat keretakan, kedalaman alur, kehalusan tekstur), mengalikan setiap input dengan sebuah <b>bobot</b>, menjumlahkannya, menambah <b>bias</b>, lalu melewatkan hasilnya ke <b>fungsi aktivasi</b> untuk menghasilkan satu output.</p>
+
+  <div class="diagram">
+   x1 ──(w1)──┐
+   x2 ──(w2)──┼──▶  Σ (jumlah) ──▶ + bias ──▶ f(z) aktivasi ──▶ output (y)
+   x3 ──(w3)──┘
+  </div>
+
+  <p>Untuk kasus deteksi cacat ban, output biasanya berupa angka antara 0 dan 1: semakin dekat ke 1 berarti model semakin yakin ban tersebut <b>cacat</b>, dan semakin dekat ke 0 berarti model yakin ban tersebut <b>normal</b>.</p>
+
+  <h3 id="bobot-bias">1.2 Bobot (Weight) dan Bias</h3>
+  <p><b>Bobot (weight)</b> menentukan seberapa besar pengaruh sebuah input terhadap output. Jika fitur "kedalaman retakan" punya bobot besar, maka perubahan kecil pada fitur tersebut akan sangat memengaruhi keputusan model. Bobot inilah yang "dipelajari" (diperbarui) selama proses training.</p>
+  <p><b>Bias</b> adalah nilai konstanta tambahan yang membuat neuron bisa "bergeser" — memberi fleksibilitas agar neuron tetap bisa menghasilkan output yang tepat walau semua input bernilai nol. Tanpa bias, garis pemisah keputusan model dipaksa selalu melewati titik nol, yang seringkali tidak realistis.</p>
+
+  <div class="card formula">
+    z = (w1 · x1) + (w2 · x2) + (w3 · x3) + b
+  </div>
+
+  <table>
+    <tr><th>Simbol</th><th>Nama</th><th>Peran</th></tr>
+    <tr><td>x</td><td>Input / fitur</td><td>Data mentah, misal skor tekstur permukaan ban</td></tr>
+    <tr><td>w</td><td>Weight (bobot)</td><td>Seberapa penting fitur tersebut, dipelajari otomatis</td></tr>
+    <tr><td>b</td><td>Bias</td><td>Pergeseran dasar, dipelajari otomatis</td></tr>
+    <tr><td>z</td><td>Pre-activation</td><td>Hasil sebelum dilewatkan fungsi aktivasi</td></tr>
+    <tr><td>y</td><td>Output</td><td>Hasil akhir neuron setelah aktivasi</td></tr>
+  </table>
+
+  <h3 id="aktivasi">1.3 Fungsi Aktivasi (termasuk Sigmoid)</h3>
+  <p>Fungsi aktivasi mengubah nilai <code class="inline">z</code> menjadi output akhir, dan yang terpenting, ia memberi model kemampuan mempelajari pola <b>non-linear</b> (pola rumit yang tidak bisa digambar dengan garis lurus). Tanpa fungsi aktivasi, sebanyak apa pun lapisan neuron yang ditumpuk, hasilnya akan tetap setara satu fungsi linear.</p>
+
+  <h4>Sigmoid</h4>
+  <p>Sigmoid memampatkan nilai berapa pun (dari minus tak-hingga sampai plus tak-hingga) menjadi rentang <b>0 sampai 1</b>. Karena itu sigmoid sangat cocok untuk kasus klasifikasi biner seperti "cacat" (1) vs "tidak cacat" (0), karena hasilnya bisa dibaca sebagai probabilitas.</p>
+  <div class="card formula">
+    sigmoid(z) = 1 / (1 + e<sup>-z</sup>)
+  </div>
+  <p>Turunan sigmoid (dipakai saat backpropagation):</p>
+  <div class="card formula">
+    sigmoid'(z) = sigmoid(z) · (1 − sigmoid(z))
+  </div>
+
+  <h4>Fungsi aktivasi lain (sekilas)</h4>
+  <table>
+    <tr><th>Fungsi</th><th>Rentang Output</th><th>Umum dipakai di</th></tr>
+    <tr><td>Sigmoid</td><td>0 s.d. 1</td><td>Output layer klasifikasi biner</td></tr>
+    <tr><td>ReLU</td><td>0 s.d. ∞</td><td>Hidden layer (CNN, MLP dalam)</td></tr>
+    <tr><td>Tanh</td><td>-1 s.d. 1</td><td>Hidden layer, data ternormalisasi simetris</td></tr>
+    <tr><td>Softmax</td><td>0 s.d. 1 (jumlah = 1)</td><td>Output layer klasifikasi multi-kelas</td></tr>
+  </table>
+
+  <h3 id="forward">1.4 Forward Propagation</h3>
+  <p>Forward propagation adalah proses mengalirkan data dari input, melewati setiap neuron dan layer, sampai menghasilkan prediksi akhir. Ini "arah maju": data masuk → dihitung → prediksi keluar.</p>
+  <ol class="steps">
+    <li><b>Terima input</b> — misalnya fitur-fitur numerik hasil ekstraksi dari citra ban.</li>
+    <li><b>Hitung z</b> — jumlahkan (input × bobot) lalu tambah bias.</li>
+    <li><b>Terapkan aktivasi</b> — ubah z menjadi output lewat sigmoid/ReLU/dsb.</li>
+    <li><b>Teruskan ke layer berikutnya</b> (jika ada), atau jadikan hasil akhir jika ini output layer.</li>
+  </ol>
+
+  <h3 id="loss">1.5 Fungsi Loss (Fungsi Kerugian)</h3>
+  <p>Setelah model menghasilkan prediksi, kita perlu mengukur <b>seberapa jauh prediksi itu dari jawaban sebenarnya (label)</b>. Ukuran ini disebut loss atau error. Untuk klasifikasi biner (cacat/tidak cacat), fungsi loss yang umum adalah <b>Binary Cross-Entropy</b>, namun untuk pengantar kita akan memakai versi yang lebih sederhana secara matematis: <b>Mean Squared Error (MSE)</b>, karena lebih mudah diturunkan secara manual.</p>
+  <div class="card formula">
+    loss = (y_prediksi − y_label)²
+  </div>
+  <p>Semakin kecil nilai loss, semakin akurat prediksi model. Tujuan training adalah <b>meminimalkan loss</b> ini dengan cara memperbaiki bobot dan bias secara bertahap.</p>
+
+  <h3 id="backprop">1.6 Backpropagation &amp; Gradient Descent</h3>
+  <p><b>Backpropagation</b> adalah proses menghitung "arah maju" secara terbalik: dari loss, kita hitung seberapa besar kontribusi setiap bobot dan bias terhadap error tersebut. Perhitungan ini memakai turunan (gradien) berdasarkan aturan rantai (chain rule) dalam kalkulus.</p>
+  <p><b>Gradient descent</b> adalah metode memperbarui bobot dan bias berdasarkan gradien tersebut, agar loss berkurang sedikit demi sedikit di setiap iterasi.</p>
+  <div class="card formula">
+    w_baru = w_lama − (learning_rate × gradien_w)<br>
+    b_baru = b_lama − (learning_rate × gradien_b)
+  </div>
+  <div class="card note">
+    <span class="label">INTUISI</span>
+    Bayangkan Anda berdiri di lereng gunung dalam kabut tebal dan ingin turun ke titik terendah (loss minimum). Anda tidak bisa melihat seluruh peta, tapi Anda bisa merasakan kemiringan tanah di bawah kaki (gradien) dan melangkah ke arah yang menurun. Learning rate menentukan seberapa besar setiap langkah yang Anda ambil.
+  </div>
+
+  <h3 id="lr-epoch">1.7 Learning Rate &amp; Epoch</h3>
+  <ul>
+    <li><b>Learning rate</b> — seberapa besar langkah pembaruan bobot setiap iterasi. Terlalu besar → model bisa "melompat" melewati titik optimal. Terlalu kecil → training menjadi sangat lambat.</li>
+    <li><b>Epoch</b> — satu putaran penuh proses training melihat <i>seluruh</i> data yang tersedia. Model biasanya dilatih selama puluhan hingga ratusan epoch agar bobot benar-benar konvergen (stabil pada nilai optimal).</li>
+    <li><b>Batch</b> — pada dataset besar, data dibagi ke dalam kelompok kecil (batch) agar komputasi lebih efisien; ini akan terlihat di praktik PyTorch nanti.</li>
+  </ul>
+
+  <h3 id="mlp">1.8 Dari Satu Neuron ke Jaringan (MLP)</h3>
+  <p>Satu neuron saja hanya bisa mempelajari pola yang sangat sederhana. Untuk masalah nyata seperti membedakan pola visual cacat pada ban, banyak neuron disusun menjadi <b>layer</b>, dan beberapa layer ditumpuk menjadi <b>Multi-Layer Perceptron (MLP)</b>.</p>
+  <div class="diagram">
+   INPUT LAYER      HIDDEN LAYER        OUTPUT LAYER
+
+     x1 ──●          ●───┐
+     x2 ──●───────▶  ●───┼──▶  ●  ──▶  y (0..1)
+     x3 ──●          ●───┘
+                  (beberapa neuron,      (1 neuron,
+                   aktivasi ReLU)         aktivasi sigmoid)
+  </div>
+  <p>Setiap panah pada diagram di atas sebenarnya membawa satu bobot masing-masing, dan setiap neuron di hidden layer serta output layer memiliki bias sendiri-sendiri.</p>
+
+  <h3 id="cnn">1.9 Sekilas: Convolutional Neural Network (CNN) untuk Citra</h3>
+  <p>Fitur ban (retak, sobek, gelembung/bubble) umumnya dideteksi langsung dari <b>citra/gambar</b>, bukan dari angka yang sudah diekstrak manual. Untuk itu deep learning modern memakai <b>CNN</b>, yaitu jaringan yang memiliki lapisan <b>konvolusi</b> untuk secara otomatis "belajar" mengenali pola visual seperti tepi, tekstur, dan bentuk cacat — tanpa kita perlu merancang fitur secara manual.</p>
+  <table>
+    <tr><th>Komponen CNN</th><th>Fungsi</th></tr>
+    <tr><td>Convolution layer</td><td>Menyapu citra dengan filter kecil untuk mendeteksi pola lokal (tepi, tekstur retak)</td></tr>
+    <tr><td>Activation (ReLU)</td><td>Menambahkan non-linearitas setelah konvolusi</td></tr>
+    <tr><td>Pooling layer</td><td>Mengecilkan ukuran citra sambil mempertahankan pola penting</td></tr>
+    <tr><td>Fully Connected layer</td><td>Menggabungkan seluruh pola menjadi keputusan akhir (cacat/tidak)</td></tr>
+  </table>
+  <p>Praktik ke-3 (Bagian 4) akan membangun CNN sederhana ini menggunakan PyTorch.</p>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="praktik1">
+  <h2><span class="num">02</span> Praktik 1 — Neuron Manual Tanpa Library (1 Data)</h2>
+  <p class="lede">Tujuan bagian ini: membuktikan bahwa semua rumus di atas benar-benar bisa dihitung dengan Python murni — tanpa NumPy, tanpa PyTorch — untuk memastikan Anda paham mekanisme di baliknya sebelum memakai library.</p>
+
+  <h3>Skenario</h3>
+  <p>Anggap kita mempunyai <b>1 data ban</b> dengan 3 fitur hasil ekstraksi sederhana dari citra permukaannya:</p>
+  <table>
+    <tr><th>Fitur</th><th>Deskripsi</th><th>Nilai (dinormalisasi 0–1)</th></tr>
+    <tr><td>x1</td><td>Skor keretakan permukaan</td><td>0.90</td></tr>
+    <tr><td>x2</td><td>Skor ketidakrataan alur</td><td>0.70</td></tr>
+    <tr><td>x3</td><td>Skor perbedaan warna/gelembung</td><td>0.60</td></tr>
+  </table>
+  <p>Label sebenarnya: <code class="inline">y = 1</code> (ban ini <b>cacat</b>). Kita akan latih 1 neuron dengan sigmoid selama beberapa iterasi agar prediksinya mendekati 1.</p>
+
+  <h3>Kode Python murni</h3>
+  <pre><span class="fname">neuron_manual.py</span><span class="cm"># ============================================================
+# Neuron tunggal, dilatih untuk 1 data, TANPA library apapun
+# ============================================================</span>
+
+<span class="kw">import</span> math
+
+<span class="cm"># ---------- 1. Data (1 sampel) ----------</span>
+x = [<span class="nb">0.90</span>, <span class="nb">0.70</span>, <span class="nb">0.60</span>]   <span class="cm"># fitur: keretakan, alur, warna</span>
+y_label = <span class="nb">1</span>                    <span class="cm"># 1 = cacat, 0 = normal</span>
+
+<span class="cm"># ---------- 2. Inisialisasi bobot & bias (nilai awal bebas/acak kecil) ----------</span>
+w = [<span class="nb">0.10</span>, <span class="nb">0.20</span>, <span class="nb">-0.15</span>]
+b = <span class="nb">0.05</span>
+
+learning_rate = <span class="nb">0.5</span>
+epochs = <span class="nb">20</span>
+
+<span class="kw">def</span> <span class="fn">sigmoid</span>(z):
+    <span class="kw">return</span> <span class="nb">1</span> / (<span class="nb">1</span> + math.exp(-z))
+
+<span class="kw">def</span> <span class="fn">sigmoid_derivative</span>(y_pred):
+    <span class="cm"># turunan sigmoid dinyatakan dalam bentuk outputnya sendiri</span>
+    <span class="kw">return</span> y_pred * (<span class="nb">1</span> - y_pred)
+
+<span class="cm"># ---------- 3. Loop training ----------</span>
+<span class="kw">for</span> epoch <span class="kw">in</span> range(epochs):
+
+    <span class="cm"># ----- FORWARD PROPAGATION -----</span>
+    z = <span class="nb">0.0</span>
+    <span class="kw">for</span> xi, wi <span class="kw">in</span> zip(x, w):
+        z += xi * wi
+    z += b
+
+    y_pred = sigmoid(z)
+
+    <span class="cm"># ----- HITUNG LOSS (Mean Squared Error) -----</span>
+    loss = (y_pred - y_label) ** <span class="nb">2</span>
+
+    <span class="cm"># ----- BACKPROPAGATION (turunan berantai) -----</span>
+    <span class="cm"># dLoss/dy_pred</span>
+    d_loss_d_ypred = <span class="nb">2</span> * (y_pred - y_label)
+    <span class="cm"># dy_pred/dz</span>
+    d_ypred_d_z = sigmoid_derivative(y_pred)
+    <span class="cm"># dLoss/dz  (chain rule)</span>
+    d_loss_d_z = d_loss_d_ypred * d_ypred_d_z
+
+    <span class="cm"># gradien untuk tiap bobot: dLoss/dw_i = dLoss/dz * x_i</span>
+    gradien_w = [d_loss_d_z * xi <span class="kw">for</span> xi <span class="kw">in</span> x]
+    gradien_b = d_loss_d_z * <span class="nb">1</span>   <span class="cm"># turunan z terhadap b selalu 1</span>
+
+    <span class="cm"># ----- UPDATE BOBOT & BIAS (gradient descent) -----</span>
+    w = [wi - learning_rate * gi <span class="kw">for</span> wi, gi <span class="kw">in</span> zip(w, gradien_w)]
+    b = b - learning_rate * gradien_b
+
+    print(<span class="str">f"Epoch {epoch+1:2d} | z={z:.4f} | prediksi={y_pred:.4f} | loss={loss:.4f}"</span>)
+
+print(<span class="str">"\nBobot akhir :"</span>, w)
+print(<span class="str">"Bias akhir  :"</span>, b)</pre>
+
+  <div class="card note">
+    <span class="label">YANG PERLU DIPERHATIKAN</span>
+    Perhatikan bahwa setiap baris kode di atas persis mengikuti rumus di Bagian 1: forward propagation (langkah z → sigmoid), loss (MSE), lalu backpropagation memakai <i>chain rule</i> untuk menurunkan gradien dari loss ke setiap bobot, dan terakhir gradient descent untuk memperbarui bobot/bias. Anda akan melihat nilai <code class="inline">loss</code> menurun dan <code class="inline">prediksi</code> mendekati 1 (label sebenarnya) di setiap epoch.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="praktik2">
+  <h2><span class="num">03</span> Praktik 2 — Melatih Model dari Data Excel</h2>
+  <p class="lede">Setelah paham mekanisme 1 neuron untuk 1 data, sekarang kita naik level: membaca <b>banyak data ban</b> (fitur-fitur numerik hasil ekstraksi) dari file Excel, lalu melatih neuron yang sama terhadap seluruh baris data tersebut.</p>
+
+  <h3>Struktur data Excel yang digunakan</h3>
+  <p>Siapkan file <code class="inline">data_ban.xlsx</code> dengan struktur kolom berikut (1 baris = 1 sampel ban):</p>
+  <table>
+    <tr><th>keretakan</th><th>ketidakrataan_alur</th><th>beda_warna</th><th>label</th></tr>
+    <tr><td>0.90</td><td>0.70</td><td>0.60</td><td>1</td></tr>
+    <tr><td>0.10</td><td>0.15</td><td>0.05</td><td>0</td></tr>
+    <tr><td>0.75</td><td>0.55</td><td>0.40</td><td>1</td></tr>
+    <tr><td>0.05</td><td>0.10</td><td>0.02</td><td>0</td></tr>
+    <tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+  </table>
+  <p>Kolom <code class="inline">label</code> berisi <b>1 = cacat</b> dan <b>0 = normal</b>, sebagai hasil anotasi manual dari inspektur QC.</p>
+
+  <h3>Instalasi library pembaca Excel</h3>
+  <pre><span class="fname">terminal</span>pip install openpyxl pandas</pre>
+
+  <h3>Kode: baca Excel + latih neuron manual untuk banyak data</h3>
+  <pre><span class="fname">latih_dari_excel.py</span><span class="kw">import</span> math
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="cm"># ---------- 1. Baca data dari Excel ----------</span>
+df = pd.read_excel(<span class="str">"data_ban.xlsx"</span>)
+
+fitur_kolom = [<span class="str">"keretakan"</span>, <span class="str">"ketidakrataan_alur"</span>, <span class="str">"beda_warna"</span>]
+X = df[fitur_kolom].values.tolist()   <span class="cm"># list of list, tiap elemen 1 sampel</span>
+Y = df[<span class="str">"label"</span>].values.tolist()
+
+print(<span class="str">f"Jumlah data terbaca: {len(X)} baris"</span>)
+
+<span class="cm"># ---------- 2. Inisialisasi bobot & bias ----------</span>
+w = [<span class="nb">0.10</span>, <span class="nb">0.20</span>, <span class="nb">-0.15</span>]
+b = <span class="nb">0.05</span>
+learning_rate = <span class="nb">0.3</span>
+epochs = <span class="nb">100</span>
+
+<span class="kw">def</span> <span class="fn">sigmoid</span>(z):
+    <span class="kw">return</span> <span class="nb">1</span> / (<span class="nb">1</span> + math.exp(-z))
+
+<span class="kw">def</span> <span class="fn">sigmoid_derivative</span>(y_pred):
+    <span class="kw">return</span> y_pred * (<span class="nb">1</span> - y_pred)
+
+<span class="cm"># ---------- 3. Training loop: iterasi seluruh dataset tiap epoch ----------</span>
+<span class="kw">for</span> epoch <span class="kw">in</span> range(epochs):
+    total_loss = <span class="nb">0.0</span>
+
+    <span class="kw">for</span> xi_row, yi_label <span class="kw">in</span> zip(X, Y):
+
+        <span class="cm"># ----- forward -----</span>
+        z = <span class="nb">0.0</span>
+        <span class="kw">for</span> xi, wi <span class="kw">in</span> zip(xi_row, w):
+            z += xi * wi
+        z += b
+        y_pred = sigmoid(z)
+
+        <span class="cm"># ----- loss -----</span>
+        loss = (y_pred - yi_label) ** <span class="nb">2</span>
+        total_loss += loss
+
+        <span class="cm"># ----- backward -----</span>
+        d_loss_d_z = <span class="nb">2</span> * (y_pred - yi_label) * sigmoid_derivative(y_pred)
+        gradien_w = [d_loss_d_z * xi <span class="kw">for</span> xi <span class="kw">in</span> xi_row]
+        gradien_b = d_loss_d_z
+
+        <span class="cm"># ----- update (per sampel / stochastic gradient descent) -----</span>
+        w = [wi - learning_rate * gi <span class="kw">for</span> wi, gi <span class="kw">in</span> zip(w, gradien_w)]
+        b = b - learning_rate * gradien_b
+
+    rata_loss = total_loss / len(X)
+    <span class="kw">if</span> (epoch + <span class="nb">1</span>) % <span class="nb">10</span> == <span class="nb">0</span>:
+        print(<span class="str">f"Epoch {epoch+1:3d} | rata-rata loss: {rata_loss:.4f}"</span>)
+
+print(<span class="str">"\nBobot akhir:"</span>, w)
+print(<span class="str">"Bias akhir :"</span>, b)
+
+<span class="cm"># ---------- 4. Uji prediksi sampel baru ----------</span>
+<span class="kw">def</span> <span class="fn">prediksi</span>(fitur):
+    z = <span class="nb">sum</span>(f * wi <span class="kw">for</span> f, wi <span class="kw">in</span> zip(fitur, w)) + b
+    <span class="kw">return</span> sigmoid(z)
+
+contoh_baru = [<span class="nb">0.80</span>, <span class="nb">0.60</span>, <span class="nb">0.50</span>]
+hasil = prediksi(contoh_baru)
+status = <span class="str">"CACAT"</span> <span class="kw">if</span> hasil >= <span class="nb">0.5</span> <span class="kw">else</span> <span class="str">"NORMAL"</span>
+print(<span class="str">f"\nPrediksi ban baru: {hasil:.4f} -> {status}"</span>)</pre>
+
+  <div class="card note">
+    <span class="label">CATATAN</span>
+    Kode ini masih memakai neuron tunggal dengan rumus manual — hanya sumber datanya yang berubah dari 1 baris statis menjadi banyak baris dari Excel. Untuk pola yang lebih kompleks (dan untuk citra ban secara langsung, bukan fitur yang sudah diekstrak), kita perlu naik ke jaringan yang lebih dalam dan memakai library seperti PyTorch — itulah tujuan Praktik 3.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="praktik3">
+  <h2><span class="num">04</span> Praktik 3 — CNN Deteksi Cacat Ban dengan PyTorch</h2>
+  <p class="lede">Pada tahap ini kita berpindah dari fitur numerik manual ke <b>citra ban secara langsung</b>, dan memakai PyTorch untuk membangun serta melatih CNN. Semua konsep di Bagian 1 (bobot, bias, aktivasi, loss, backpropagation, learning rate, epoch) tetap berlaku — hanya saja PyTorch yang menghitung turunan/gradien secara otomatis (<i>autograd</i>).</p>
+
+  <h3>Struktur folder dataset</h3>
+  <div class="diagram">
+dataset_ban/
+├── train/
+│   ├── cacat/
+│   │   ├── img001.jpg
+│   │   ├── img002.jpg
+│   │   └── ...
+│   └── normal/
+│       ├── img101.jpg
+│       └── ...
+└── val/
+    ├── cacat/
+    └── normal/
+  </div>
+  <p>PyTorch menyediakan <code class="inline">ImageFolder</code> yang otomatis membaca struktur folder seperti ini dan menetapkan label berdasarkan nama subfolder.</p>
+
+  <h3>Instalasi</h3>
+  <pre><span class="fname">terminal</span>pip install torch torchvision</pre>
+
+  <h3>Kode lengkap: dataset, model CNN, training, evaluasi</h3>
+  <pre><span class="fname">deteksi_cacat_ban_pytorch.py</span><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+<span class="kw">import</span> torch.optim <span class="kw">as</span> optim
+<span class="kw">from</span> torchvision <span class="kw">import</span> datasets, transforms
+<span class="kw">from</span> torch.utils.data <span class="kw">import</span> DataLoader
+
+device = torch.device(<span class="str">"cuda"</span> <span class="kw">if</span> torch.cuda.is_available() <span class="kw">else</span> <span class="str">"cpu"</span>)
+
+<span class="cm"># ---------- 1. Transformasi & pemuatan data ----------</span>
+transform = transforms.Compose([
+    transforms.Resize((<span class="nb">128</span>, <span class="nb">128</span>)),
+    transforms.ToTensor(),                          <span class="cm"># ubah gambar -> tensor 0..1</span>
+    transforms.Normalize([<span class="nb">0.5</span>]*<span class="nb">3</span>, [<span class="nb">0.5</span>]*<span class="nb">3</span>),      <span class="cm"># normalisasi ke -1..1</span>
+])
+
+train_data = datasets.ImageFolder(<span class="str">"dataset_ban/train"</span>, transform=transform)
+val_data   = datasets.ImageFolder(<span class="str">"dataset_ban/val"</span>,   transform=transform)
+
+train_loader = DataLoader(train_data, batch_size=<span class="nb">16</span>, shuffle=<span class="kw">True</span>)
+val_loader   = DataLoader(val_data,   batch_size=<span class="nb">16</span>, shuffle=<span class="kw">False</span>)
+
+print(<span class="str">"Kelas:"</span>, train_data.classes)   <span class="cm"># contoh: ['cacat', 'normal']</span>
+
+<span class="cm"># ---------- 2. Arsitektur CNN sederhana ----------</span>
+<span class="kw">class</span> <span class="fn">CNNDeteksiCacatBan</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        <span class="nb">super</span>().__init__()
+        self.conv1 = nn.Conv2d(<span class="nb">3</span>, <span class="nb">16</span>, kernel_size=<span class="nb">3</span>, padding=<span class="nb">1</span>)  <span class="cm"># 3 channel RGB -> 16 filter</span>
+        self.conv2 = nn.Conv2d(<span class="nb">16</span>, <span class="nb">32</span>, kernel_size=<span class="nb">3</span>, padding=<span class="nb">1</span>)
+        self.pool  = nn.MaxPool2d(<span class="nb">2</span>, <span class="nb">2</span>)
+        self.relu  = nn.ReLU()
+
+        <span class="cm"># setelah 2x pooling, 128x128 -> 32x32</span>
+        self.fc1 = nn.Linear(<span class="nb">32</span> * <span class="nb">32</span> * <span class="nb">32</span>, <span class="nb">64</span>)
+        self.fc2 = nn.Linear(<span class="nb">64</span>, <span class="nb">1</span>)         <span class="cm"># 1 output -> klasifikasi biner</span>
+        self.sigmoid = nn.Sigmoid()
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        x = self.pool(self.relu(self.conv1(x)))   <span class="cm"># -> 16 x 64 x 64</span>
+        x = self.pool(self.relu(self.conv2(x)))   <span class="cm"># -> 32 x 32 x 32</span>
+        x = x.view(x.size(<span class="nb">0</span>), -<span class="nb">1</span>)             <span class="cm"># flatten</span>
+        x = self.relu(self.fc1(x))
+        x = self.sigmoid(self.fc2(x))
+        <span class="kw">return</span> x
+
+model = CNNDeteksiCacatBan().to(device)
+
+<span class="cm"># ---------- 3. Loss & optimizer ----------</span>
+criterion = nn.BCELoss()                          <span class="cm"># Binary Cross-Entropy, standar utk output sigmoid</span>
+optimizer = optim.Adam(model.parameters(), lr=<span class="nb">0.001</span>)   <span class="cm"># versi lanjutan dari gradient descent</span>
+
+<span class="cm"># ---------- 4. Training loop ----------</span>
+epochs = <span class="nb">15</span>
+
+<span class="kw">for</span> epoch <span class="kw">in</span> range(epochs):
+    model.train()
+    total_loss = <span class="nb">0.0</span>
+
+    <span class="kw">for</span> gambar, label <span class="kw">in</span> train_loader:
+        gambar = gambar.to(device)
+        label  = label.float().unsqueeze(<span class="nb">1</span>).to(device)   <span class="cm"># bentuk (batch, 1)</span>
+
+        optimizer.zero_grad()              <span class="cm"># reset gradien sebelumnya</span>
+        output = model(gambar)             <span class="cm"># forward propagation</span>
+        loss = criterion(output, label)    <span class="cm"># hitung loss</span>
+        loss.backward()                    <span class="cm"># backpropagation otomatis (autograd)</span>
+        optimizer.step()                   <span class="cm"># update bobot & bias</span>
+
+        total_loss += loss.item()
+
+    rata_loss = total_loss / len(train_loader)
+    print(<span class="str">f"Epoch {epoch+1:2d}/{epochs} | loss latih: {rata_loss:.4f}"</span>)
+
+<span class="cm"># ---------- 5. Evaluasi pada data validasi ----------</span>
+model.eval()
+benar, total = <span class="nb">0</span>, <span class="nb">0</span>
+<span class="kw">with</span> torch.no_grad():
+    <span class="kw">for</span> gambar, label <span class="kw">in</span> val_loader:
+        gambar = gambar.to(device)
+        label  = label.float().unsqueeze(<span class="nb">1</span>).to(device)
+
+        output = model(gambar)
+        prediksi = (output >= <span class="nb">0.5</span>).float()
+        benar += (prediksi == label).sum().item()
+        total += label.size(<span class="nb">0</span>)
+
+akurasi = <span class="nb">100</span> * benar / total
+print(<span class="str">f"\nAkurasi validasi: {akurasi:.2f}%"</span>)
+
+<span class="cm"># ---------- 6. Simpan model ----------</span>
+torch.save(model.state_dict(), <span class="str">"model_deteksi_cacat_ban.pth"</span>)
+print(<span class="str">"Model tersimpan sebagai model_deteksi_cacat_ban.pth"</span>)</pre>
+
+  <h3>Prediksi pada satu gambar ban baru</h3>
+  <pre><span class="fname">prediksi_satu_gambar.py</span><span class="kw">from</span> PIL <span class="kw">import</span> Image
+<span class="kw">import</span> torch
+
+<span class="cm"># muat ulang model yang sudah dilatih</span>
+model = CNNDeteksiCacatBan()
+model.load_state_dict(torch.load(<span class="str">"model_deteksi_cacat_ban.pth"</span>))
+model.<span class="nb">eval</span>()
+
+img = Image.<span class="fn">open</span>(<span class="str">"ban_baru.jpg"</span>).convert(<span class="str">"RGB"</span>)
+img_tensor = transform(img).unsqueeze(<span class="nb">0</span>)   <span class="cm"># tambah dimensi batch</span>
+
+<span class="kw">with</span> torch.no_grad():
+    hasil = model(img_tensor).item()
+
+status = <span class="str">"CACAT"</span> <span class="kw">if</span> hasil >= <span class="nb">0.5</span> <span class="kw">else</span> <span class="str">"NORMAL"</span>
+print(<span class="str">f"Skor: {hasil:.4f} -> {status}"</span>)</pre>
+
+  <div class="card note">
+    <span class="label">MENGHUBUNGKAN KEMBALI KE TEORI</span>
+    <code class="inline">nn.Conv2d</code> dan <code class="inline">nn.Linear</code> masing-masing menyimpan bobot dan bias yang dipelajari otomatis. <code class="inline">criterion</code> menghitung loss, <code class="inline">loss.backward()</code> adalah backpropagation (dihitung otomatis oleh autograd — versi otomatis dari perhitungan gradien manual di Praktik 1 &amp; 2), dan <code class="inline">optimizer.step()</code> adalah gradient descent (di sini dipakai varian <b>Adam</b>, versi gradient descent yang lebih adaptif). <code class="inline">epochs</code> dan <code class="inline">lr</code> (learning rate) persis konsep yang sama seperti di Bagian 1.7.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ============================================================ -->
+<section id="penutup">
+  <h2><span class="num">05</span> Ringkasan &amp; Langkah Lanjut</h2>
+  <table>
+    <tr><th>Tahap</th><th>Apa yang dipelajari</th><th>Alat</th></tr>
+    <tr><td>1. Teori</td><td>Neuron, bobot, bias, sigmoid, forward, loss, backprop, learning rate, epoch, MLP, CNN</td><td>Konsep matematis</td></tr>
+    <tr><td>2. Praktik 1</td><td>Menghitung forward &amp; backward secara manual untuk 1 data</td><td>Python murni</td></tr>
+    <tr><td>3. Praktik 2</td><td>Melatih neuron yang sama terhadap banyak data dari file nyata</td><td>Python + pandas/openpyxl</td></tr>
+    <tr><td>4. Praktik 3</td><td>Membangun CNN untuk mengklasifikasi citra ban secara langsung</td><td>PyTorch + torchvision</td></tr>
+  </table>
+
+  <h3>Saran pengembangan lanjutan</h3>
+  <ul>
+    <li>Tambah augmentasi data (rotasi, flip, perubahan pencahayaan) agar model lebih tahan terhadap variasi kondisi foto ban di lapangan.</li>
+    <li>Gunakan arsitektur CNN yang lebih matang seperti <b>ResNet</b> atau <b>MobileNet</b> lewat <i>transfer learning</i> untuk akurasi lebih tinggi dengan data terbatas.</li>
+    <li>Kumpulkan data cacat ban lebih beragam: retak, sobek, gelembung (bubble), keausan tidak merata, agar model bisa dikembangkan menjadi klasifikasi multi-kelas (bukan hanya biner).</li>
+    <li>Pantau <i>precision</i> dan <i>recall</i>, bukan hanya akurasi — pada inspeksi kualitas, melewatkan ban cacat (false negative) biasanya jauh lebih berisiko daripada salah menandai ban baik sebagai cacat.</li>
+  </ul>
+
+  <footer>
+    <span class="badge">Deep Learning</span><span class="badge">Computer Vision</span><span class="badge">Quality Inspection</span><span class="badge">PyTorch</span>
+    <p>Modul praktik ini disusun sebagai materi belajar bertahap dari fondasi matematis hingga implementasi CNN nyata.</p>
+  </footer>
+</section>
+
+</main>
+</div>
+</body>
+</html>
