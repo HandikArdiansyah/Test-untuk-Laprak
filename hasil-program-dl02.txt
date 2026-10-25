@@ -1,0 +1,56 @@
+D:\laragon\www\CodeLab>"C:\Users\MyBook Hype AMD\AppData\Local\Programs\Python\Python310\python.exe" "d:/laragon/www/CodeLab/02 - Practice/Python/Semester 3/dl02.py"
+=================================================================
+BAB 1 — SAYA PUNYA 2 PRODUK
+=================================================================
+Produk A: ciri=[0.9, 0.8, 0.7], jawaban=1 (CACAT)
+Produk B: ciri=[0.1, 0.2, 0.15], jawaban=0 (NORMAL)
+→ Tugas neuron: bedakan keduanya!
+
+=================================================================
+BAB 2 — SAYA ASAL TENTUKAN BOBOT & BIAS
+=================================================================
+Bobot awal = [0.1, 0.2, -0.15]
+Bias awal  = 0.05
+
+=================================================================
+BAB 3 — PROSES BELAJAR (TEBAC → CEK → KOREKSI → ULANGI)
+=================================================================
+Putaran  1 | loss=0.6665 | bobot=[+0.189, +0.264, -0.090] | bias=+0.033
+Putaran  2 | loss=0.6364 | bobot=[+0.268, +0.321, -0.038] | bias=+0.006
+Putaran  3 | loss=0.6112 | bobot=[+0.342, +0.371, +0.010] | bias=-0.029
+Putaran  4 | loss=0.5891 | bobot=[+0.409, +0.417, +0.053] | bias=-0.070
+Putaran  5 | loss=0.5692 | bobot=[+0.473, +0.459, +0.093] | bias=-0.114
+Putaran  6 | loss=0.5509 | bobot=[+0.532, +0.498, +0.130] | bias=-0.161
+Putaran  7 | loss=0.5338 | bobot=[+0.589, +0.534, +0.165] | bias=-0.209
+Putaran  8 | loss=0.5177 | bobot=[+0.643, +0.569, +0.199] | bias=-0.259
+Putaran  9 | loss=0.5025 | bobot=[+0.696, +0.602, +0.230] | bias=-0.309
+Putaran 10 | loss=0.4880 | bobot=[+0.746, +0.633, +0.261] | bias=-0.360
+Putaran 11 | loss=0.4741 | bobot=[+0.795, +0.664, +0.290] | bias=-0.410
+Putaran 12 | loss=0.4609 | bobot=[+0.842, +0.693, +0.319] | bias=-0.460
+Putaran 13 | loss=0.4482 | bobot=[+0.888, +0.721, +0.346] | bias=-0.510
+Putaran 14 | loss=0.4361 | bobot=[+0.933, +0.748, +0.373] | bias=-0.559
+Putaran 15 | loss=0.4245 | bobot=[+0.976, +0.775, +0.399] | bias=-0.607
+Putaran 16 | loss=0.4134 | bobot=[+1.019, +0.801, +0.424] | bias=-0.655
+Putaran 17 | loss=0.4027 | bobot=[+1.060, +0.826, +0.449] | bias=-0.701
+Putaran 18 | loss=0.3924 | bobot=[+1.101, +0.851, +0.474] | bias=-0.747
+Putaran 19 | loss=0.3826 | bobot=[+1.141, +0.875, +0.497] | bias=-0.793
+Putaran 20 | loss=0.3732 | bobot=[+1.180, +0.899, +0.520] | bias=-0.837
+Putaran 21 | loss=0.3641 | bobot=[+1.218, +0.922, +0.543] | bias=-0.880
+Putaran 22 | loss=0.3553 | bobot=[+1.256, +0.945, +0.565] | bias=-0.923
+Putaran 23 | loss=0.3470 | bobot=[+1.292, +0.967, +0.587] | bias=-0.965
+Putaran 24 | loss=0.3389 | bobot=[+1.328, +0.989, +0.609] | bias=-1.006
+Putaran 25 | loss=0.3311 | bobot=[+1.364, +1.011, +0.630] | bias=-1.046
+Putaran 26 | loss=0.3236 | bobot=[+1.398, +1.032, +0.650] | bias=-1.086
+Putaran 27 | loss=0.3164 | bobot=[+1.432, +1.052, +0.670] | bias=-1.125
+Putaran 28 | loss=0.3095 | bobot=[+1.466, +1.073, +0.690] | bias=-1.163
+Putaran 29 | loss=0.3028 | bobot=[+1.499, +1.093, +0.710] | bias=-1.200
+Putaran 30 | loss=0.2964 | bobot=[+1.531, +1.112, +0.729] | bias=-1.237
+
+=================================================================
+BAB 4 — HASIL AKHIR: APAKAH NEURON SUDAH PINTAR MEMBEDAKAN?
+=================================================================
+Bobot akhir: [1.5307, 1.1122, 0.7291]
+Bias akhir : -1.2368
+
+Produk A: tebakan=0.8236 → CACAT (asli: CACAT) ✅ BENAR
+Produk B: tebakan=0.3204 → NORMAL (asli: NORMAL) ✅ BENAR
