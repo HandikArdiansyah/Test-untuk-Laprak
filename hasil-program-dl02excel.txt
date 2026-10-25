@@ -1,0 +1,17 @@
+D:\projectpython>"C:\Users\MyBook Hype AMD\AppData\Local\Programs\Python\Python310\python.exe" d:/projectpython/dl02excel.py
+Jumlah data terbaca: 6 baris
+Epoch  10 | rata-rata loss: 0.1287
+Epoch  20 | rata-rata loss: 0.0762
+Epoch  30 | rata-rata loss: 0.0519
+Epoch  40 | rata-rata loss: 0.0388
+Epoch  50 | rata-rata loss: 0.0307
+Epoch  60 | rata-rata loss: 0.0253
+Epoch  70 | rata-rata loss: 0.0215
+Epoch  80 | rata-rata loss: 0.0186
+Epoch  90 | rata-rata loss: 0.0164
+Epoch 100 | rata-rata loss: 0.0147
+
+Bobot akhir: [3.3426102047428325, 2.0463845702627443, 1.8009972313508087]
+Bias akhir : -2.6941074440090724
+
+Prediksi ban baru: 0.8917 -> CACAT
